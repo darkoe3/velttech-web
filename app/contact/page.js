@@ -1,0 +1,121 @@
+import { Mail, MessageCircle, Phone, Send, Globe } from "lucide-react";
+import Link from "next/link";
+import Reveal from "@/components/ui/Reveal";
+
+export const metadata = {
+  title: "Contact Velttech",
+  description:
+    "Contact Velttech for coding training, digital skills development, data collection and analysis, software solutions, and IT consulting.",
+};
+
+const contactItems = [
+  { label: "Phone", value: "0543636510", href: "tel:0543636510", icon: Phone },
+  { label: "Email", value: "info@velttech.org", href: "mailto:info@velttech.org", icon: Mail },
+  { label: "Website", value: "velttech.org", href: "https://velttech.org", icon: Globe },
+];
+
+export default function ContactPage() {
+  return (
+    <main className="bg-light">
+      <section className="relative overflow-hidden bg-dark px-5 py-20 sm:px-6 sm:py-24 lg:px-8">
+        <div
+          className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(244,195,24,0.2),transparent_30%),radial-gradient(circle_at_82%_58%,rgba(156,206,217,0.22),transparent_32%)]"
+          aria-hidden="true"
+        />
+        <Reveal className="relative mx-auto max-w-7xl">
+          <p className="text-sm font-black uppercase tracking-[0.18em] text-secondary">
+            Contact
+          </p>
+          <h1 className="mt-4 text-5xl font-black tracking-tight text-white sm:text-6xl">
+            Contact Velttech
+          </h1>
+          <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
+            Tell us what you want to learn, build, analyze, or improve. We will help
+            you choose the right next step.
+          </p>
+        </Reveal>
+      </section>
+
+      <section className="px-5 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.85fr_1.15fr]">
+          <Reveal>
+            <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-900/5">
+              <h2 className="text-2xl font-black text-dark">Reach us directly</h2>
+              <div className="mt-6 space-y-4">
+                {contactItems.map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-light p-4 transition hover:border-primary hover:bg-white"
+                    >
+                      <span className="grid size-11 place-items-center rounded-xl bg-primary text-dark">
+                        <Icon size={21} aria-hidden="true" />
+                      </span>
+                      <span>
+                        <span className="block text-sm font-bold text-slate-500">{item.label}</span>
+                        <span className="block font-black text-dark">{item.value}</span>
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+              <Link
+                href="https://wa.me/233543636510"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-black text-dark shadow-lg shadow-slate-900/10 transition hover:scale-[1.01]"
+              >
+                <MessageCircle size={19} aria-hidden="true" />
+                Chat on WhatsApp
+              </Link>
+            </aside>
+          </Reveal>
+
+          <Reveal delay={0.07}>
+            <form className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-900/5 sm:p-8">
+              <h2 className="text-2xl font-black text-dark">Send an enquiry</h2>
+              <div className="mt-6 grid gap-5 md:grid-cols-2">
+                <label className="block">
+                  <span className="text-sm font-bold text-slate-700">Name</span>
+                  <input className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25" name="name" type="text" />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-bold text-slate-700">Email</span>
+                  <input className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25" name="email" type="email" />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-bold text-slate-700">Phone</span>
+                  <input className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25" name="phone" type="tel" />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-bold text-slate-700">Service interest</span>
+                  <select className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25" name="service">
+                    <option>Coding for Kids</option>
+                    <option>Corporate Microsoft Excel Training</option>
+                    <option>Data Collection & Analysis</option>
+                    <option>Software Solutions</option>
+                    <option>IT Consulting</option>
+                  </select>
+                </label>
+                <label className="block md:col-span-2">
+                  <span className="text-sm font-bold text-slate-700">Message</span>
+                  <textarea className="mt-2 min-h-36 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25" name="message" />
+                </label>
+              </div>
+              <button
+                type="button"
+                className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-black text-dark shadow-lg shadow-primary/25 transition hover:bg-[#EAB308]"
+              >
+                Send Message
+                <Send size={18} aria-hidden="true" />
+              </button>
+            </form>
+          </Reveal>
+        </div>
+      </section>
+    </main>
+  );
+}
