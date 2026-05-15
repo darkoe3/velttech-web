@@ -2,15 +2,12 @@
 
 import { motion } from "framer-motion";
 import { MessageCircle } from "lucide-react";
-
-const phoneNumber = "233543636510";
-const defaultMessage = "Hello Velttech, I would like to enquire about your services.";
-const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(defaultMessage)}`;
+import { whatsappHref } from "@/lib/contact-details";
 
 export default function WhatsAppButton() {
   return (
     <motion.a
-      href={whatsappUrl}
+      href={whatsappHref}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with Velttech on WhatsApp"

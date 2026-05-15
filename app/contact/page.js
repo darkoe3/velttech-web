@@ -1,6 +1,12 @@
-import { Mail, MessageCircle, Phone, Send, Globe } from "lucide-react";
+import { Mail, MessageCircle, Phone, Globe } from "lucide-react";
 import Link from "next/link";
 import Reveal from "@/components/ui/Reveal";
+import ContactForm from "@/components/contact/ContactForm";
+import {
+  contactPhoneDisplay,
+  contactPhoneHref,
+  whatsappHref,
+} from "@/lib/contact-details";
 
 export const metadata = {
   title: "Contact Velttech",
@@ -9,7 +15,7 @@ export const metadata = {
 };
 
 const contactItems = [
-  { label: "Phone", value: "0543636510", href: "tel:0543636510", icon: Phone },
+  { label: "Phone", value: contactPhoneDisplay, href: contactPhoneHref, icon: Phone },
   { label: "Email", value: "info@velttech.org", href: "mailto:info@velttech.org", icon: Mail },
   { label: "Website", value: "velttech.org", href: "https://velttech.org", icon: Globe },
 ];
@@ -63,7 +69,7 @@ export default function ContactPage() {
                 })}
               </div>
               <Link
-                href="https://wa.me/233543636510"
+                href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-black text-dark shadow-lg shadow-slate-900/10 transition hover:scale-[1.01]"
@@ -75,44 +81,7 @@ export default function ContactPage() {
           </Reveal>
 
           <Reveal delay={0.07}>
-            <form className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-900/5 sm:p-8">
-              <h2 className="text-2xl font-black text-dark">Send an enquiry</h2>
-              <div className="mt-6 grid gap-5 md:grid-cols-2">
-                <label className="block">
-                  <span className="text-sm font-bold text-slate-700">Name</span>
-                  <input className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25" name="name" type="text" />
-                </label>
-                <label className="block">
-                  <span className="text-sm font-bold text-slate-700">Email</span>
-                  <input className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25" name="email" type="email" />
-                </label>
-                <label className="block">
-                  <span className="text-sm font-bold text-slate-700">Phone</span>
-                  <input className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25" name="phone" type="tel" />
-                </label>
-                <label className="block">
-                  <span className="text-sm font-bold text-slate-700">Service interest</span>
-                  <select className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25" name="service">
-                    <option>Coding for Kids</option>
-                    <option>Corporate Microsoft Excel Training</option>
-                    <option>Data Collection & Analysis</option>
-                    <option>Software Solutions</option>
-                    <option>IT Consulting</option>
-                  </select>
-                </label>
-                <label className="block md:col-span-2">
-                  <span className="text-sm font-bold text-slate-700">Message</span>
-                  <textarea className="mt-2 min-h-36 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25" name="message" />
-                </label>
-              </div>
-              <button
-                type="button"
-                className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-black text-dark shadow-lg shadow-primary/25 transition hover:bg-[#EAB308]"
-              >
-                Send Message
-                <Send size={18} aria-hidden="true" />
-              </button>
-            </form>
+            <ContactForm />
           </Reveal>
         </div>
       </section>
