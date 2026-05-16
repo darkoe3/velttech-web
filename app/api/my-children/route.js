@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ACCESS_COOKIE } from "@/lib/auth-cookies";
+import { API_URL } from "@/lib/api";
 
-const DJANGO_API_URL = process.env.DJANGO_API_URL || "http://127.0.0.1:8000";
-const DJANGO_MY_CHILDREN_URL = `${DJANGO_API_URL}/api/my-children/`;
+const DJANGO_MY_CHILDREN_URL = `${API_URL}/api/my-children/`;
 
 async function getAccessToken() {
   const cookieStore = await cookies();

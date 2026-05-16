@@ -6,11 +6,10 @@ import {
   authCookieOptions,
   clearCookieOptions,
 } from "@/lib/auth-cookies";
-
-const DJANGO_API_URL = process.env.DJANGO_API_URL || "http://127.0.0.1:8000";
+import { API_URL } from "@/lib/api";
 
 async function fetchCurrentUser(accessToken) {
-  return fetch(`${DJANGO_API_URL}/api/auth/me/`, {
+  return fetch(`${API_URL}/api/auth/me/`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -19,7 +18,7 @@ async function fetchCurrentUser(accessToken) {
 }
 
 async function refreshAccessToken(refreshToken) {
-  const response = await fetch(`${DJANGO_API_URL}/api/auth/refresh/`, {
+  const response = await fetch(`${API_URL}/api/auth/refresh/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

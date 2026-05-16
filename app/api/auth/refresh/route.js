@@ -5,8 +5,7 @@ import {
   authCookieOptions,
   clearCookieOptions,
 } from "@/lib/auth-cookies";
-
-const DJANGO_API_URL = process.env.DJANGO_API_URL || "http://127.0.0.1:8000";
+import { API_URL } from "@/lib/api";
 
 export async function POST(request) {
   const refreshToken = request.cookies.get(REFRESH_COOKIE)?.value;
@@ -15,7 +14,7 @@ export async function POST(request) {
     return NextResponse.json({ detail: "Refresh token missing." }, { status: 401 });
   }
 
-  const djangoRes = await fetch(`${DJANGO_API_URL}/api/auth/refresh/`, {
+  const djangoRes = await fetch(`${API_URL}/api/auth/refresh/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

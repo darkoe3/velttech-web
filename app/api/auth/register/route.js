@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { ACCESS_COOKIE, REFRESH_COOKIE, authCookieOptions } from "@/lib/auth-cookies";
-
-const DJANGO_API_URL = process.env.DJANGO_API_URL || "http://127.0.0.1:8000";
+import { API_URL } from "@/lib/api";
 
 export async function POST(request) {
   const payload = await request.json();
 
-  const registerRes = await fetch(`${DJANGO_API_URL}/api/auth/register/`, {
+  const registerRes = await fetch(`${API_URL}/api/auth/register/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -18,7 +17,7 @@ export async function POST(request) {
     return NextResponse.json(registerData, { status: registerRes.status });
   }
 
-  const loginRes = await fetch(`${DJANGO_API_URL}/api/auth/login/`, {
+  const loginRes = await fetch(`${API_URL}/api/auth/login/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

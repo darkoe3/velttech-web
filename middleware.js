@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ACCESS_COOKIE, REFRESH_COOKIE } from "@/lib/auth-cookies";
+import { API_URL } from "@/lib/api";
 
-const DJANGO_API_URL = process.env.DJANGO_API_URL || "http://127.0.0.1:8000";
 const protectedPaths = [
   "/dashboard",
   "/my-courses",
@@ -58,7 +58,7 @@ async function refreshAccessToken(request) {
     return null;
   }
 
-  const res = await fetch(`${DJANGO_API_URL}/api/auth/refresh/`, {
+  const res = await fetch(`${API_URL}/api/auth/refresh/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

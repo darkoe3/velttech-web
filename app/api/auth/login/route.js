@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { ACCESS_COOKIE, REFRESH_COOKIE, authCookieOptions } from "@/lib/auth-cookies";
-
-const DJANGO_API_URL = process.env.DJANGO_API_URL || "http://127.0.0.1:8000";
+import { API_URL } from "@/lib/api";
 
 export async function POST(request) {
   const credentials = await request.json();
 
-  const djangoRes = await fetch(`${DJANGO_API_URL}/api/auth/login/`, {
+  const djangoRes = await fetch(`${API_URL}/api/auth/login/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
