@@ -2,23 +2,8 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
 const CONTACT_RECIPIENT = "info@velttech.org";
-const CONTACT_SENDER = "Velttech <onboarding@resend.dev>";
+const CONTACT_SENDER = "Velttech <noreply@velttech.org>";
 const isDevelopment = process.env.NODE_ENV !== "production";
-
-function apiError(detail, status, error) {
-  if (error) {
-    console.error("Resend contact form error:", error);
-  }
-
-  return NextResponse.json(
-    {
-      detail: isDevelopment
-        ? detail
-        : "We could not send your message right now. Please try again.",
-    },
-    { status },
-  );
-}
 
 function escapeHtml(value = "") {
   return String(value)
@@ -32,14 +17,18 @@ function escapeHtml(value = "") {
 export async function POST(request) {
   try {
     if (!process.env.RESEND_API_KEY) {
-      return apiError("RESEND_API_KEY is missing. Email service is not configured.", 500);
+      console.error("Missing RESEND_API_KEY");
+      return Response.json(
+        { error: "Server email configuration is missing." },
+        { status: 500 },
+      );
     }
 
     const { name, email, phone, service, message } = await request.json();
 
     if (!name || !email || !phone || !service || !message) {
       return NextResponse.json(
-        { detail: "Please complete all fields before sending your message." },
+        { error: "Please complete all fields before sending your message." },
         { status: 400 },
       );
     }
@@ -52,8 +41,8 @@ export async function POST(request) {
     });
 
     const { error } = await resend.emails.send({
-      from: "Velttech <noreply@velttech.org>",
-      to: "info@velttech.org",
+      from: CONTACT_SENDER,
+      to: CONTACT_RECIPIENT,
       replyTo: email,
       subject: "New Contact Form Submission from Velttech Website",
       html: `
@@ -82,11 +71,27 @@ export async function POST(request) {
     });
 
     if (error) {
-      return apiError(error.message || "Resend could not send the email.", 502, error);
+      console.error("Contact form error:", error);
+      return NextResponse.json(
+        {
+          error: isDevelopment
+            ? error.message || "Resend could not send the email."
+            : "We could not send your message right now. Please try again.",
+        },
+        { status: 502 },
+      );
     }
 
-    return NextResponse.json({ detail: "Message sent successfully." });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    return apiError(error.message || "Unexpected contact form error.", 500, error);
+    console.error("Contact form error:", error);
+    return NextResponse.json(
+      {
+        error: isDevelopment
+          ? error.message || "Unexpected contact form error."
+          : "We could not send your message right now. Please try again.",
+      },
+      { status: 500 },
+    );
   }
 }
