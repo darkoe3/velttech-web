@@ -10,10 +10,17 @@ export function AcademyCard({ children, className = "" }) {
   );
 }
 
-export function SummaryCard({ label, value, detail }) {
+export function SummaryCard({ label, value, detail, icon: Icon }) {
   return (
     <AcademyCard>
-      <p className="text-sm font-semibold text-slate-500">{label}</p>
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-semibold text-slate-500">{label}</p>
+        {Icon ? (
+          <span className="rounded-lg bg-primary/20 p-2 text-dark">
+            <Icon className="h-5 w-5" aria-hidden="true" />
+          </span>
+        ) : null}
+      </div>
       <p className="mt-4 text-3xl font-bold text-dark">{value}</p>
       {detail ? <p className="mt-2 text-sm text-slate-500">{detail}</p> : null}
     </AcademyCard>

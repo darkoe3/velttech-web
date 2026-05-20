@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BookOpen, CheckCircle2, Clock, CreditCard, DollarSign, Hourglass, ListChecks, Users } from "lucide-react";
 import { djangoApiFetch, getCurrentUser } from "@/lib/django-api";
 import {
   AcademyCard,
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/academy";
 import PendingStudentActions from "@/components/admin/PendingStudentActions";
 import AdminCharts from "@/components/admin/AdminCharts";
+import DashboardPaymentStatusActions from "@/components/payments/DashboardPaymentStatusActions";
 
 const quickActions = {
   admin: [
@@ -253,19 +255,11 @@ function ParentDashboard({ dashboard }) {
                   <dd className="font-bold text-dark">{paymentSummary.pending || 0}</dd>
                 </div>
               </dl>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link
-                  href="/payments"
-                  className="inline-flex items-center justify-center rounded-xl bg-dark px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800"
-                >
-                  View Payments
-                </Link>
-                <Link
-                  href="/payments"
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-dark transition hover:border-slate-300 hover:bg-slate-50"
-                >
-                  View Receipts
-                </Link>
+              <div className="mt-5">
+                <DashboardPaymentStatusActions
+                  outstandingAmount={paymentSummary.outstanding_amount}
+                  pendingPaymentIds={paymentSummary.pending_payment_ids || []}
+                />
               </div>
             </AcademyCard>
           </section>
@@ -348,16 +342,19 @@ function AdminDashboard({ dashboard }) {
   const notifications = dashboard.notifications || [];
   const pendingChildren = dashboard.pending_children || [];
   const approvedUnassignedChildren = dashboard.approved_unassigned_children || [];
+  const latestActivityLogs = dashboard.latest_activity_logs || [];
 
   return (
     <>
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-6">
-        <SummaryCard label="Total Students" value={summary.total_students || 0} />
-        <SummaryCard label="Total Parents" value={summary.total_parents || 0} />
-        <SummaryCard label="Total Courses" value={summary.total_courses || 0} />
-        <SummaryCard label="Total Enrollments" value={summary.total_enrollments || 0} />
-        <SummaryCard label="Total Payments" value={summary.total_payments || 0} />
-        <SummaryCard label="Instructors" value={summary.total_instructors || 0} />
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <SummaryCard label="Total Students" value={summary.total_students || 0} icon={Users} />
+        <SummaryCard label="Approved Students" value={summary.approved_students || 0} icon={CheckCircle2} />
+        <SummaryCard label="Pending Approvals" value={summary.pending_approvals || 0} icon={Hourglass} />
+        <SummaryCard label="Total Courses" value={summary.total_courses || 0} icon={BookOpen} />
+        <SummaryCard label="Total Payments" value={summary.total_payments || 0} icon={CreditCard} />
+        <SummaryCard label="Total Paid Amount" value={formatMoney(summary.total_paid_amount)} icon={DollarSign} />
+        <SummaryCard label="Current Month Revenue" value={formatMoney(summary.current_month_revenue)} icon={ListChecks} />
+        <SummaryCard label="Pending Payments" value={summary.pending_payments || 0} icon={Clock} />
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-3">
@@ -454,6 +451,36 @@ function AdminDashboard({ dashboard }) {
         )}
       </section>
       <AdminCharts dashboard={dashboard} />
+
+      <section className="mt-8">
+        <SectionHeading title="Latest Activity" description="Recent admin operations across the academy." actionHref="/admin/activity-logs" actionLabel="View all ->" />
+        {latestActivityLogs.length === 0 ? (
+          <EmptyState>No activity has been logged yet.</EmptyState>
+        ) : (
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <thead className="bg-slate-50 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Time</th>
+                  <th className="px-4 py-3">Admin</th>
+                  <th className="px-4 py-3">Action</th>
+                  <th className="px-4 py-3">Description</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {latestActivityLogs.map((log) => (
+                  <tr key={log.id}>
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(log.timestamp || log.created_at, { timeStyle: "short" })}</td>
+                    <td className="whitespace-nowrap px-4 py-3 font-semibold text-dark">{log.user_email || "System"}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-600">{log.action}</td>
+                    <td className="px-4 py-3 text-slate-600">{log.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <div className="mt-8">
         <NotificationsPreview notifications={notifications} />

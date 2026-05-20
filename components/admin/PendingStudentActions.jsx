@@ -31,7 +31,9 @@ export default function PendingStudentActions({ studentId }) {
       setBusy("");
       return;
     }
-    router.refresh();
+    setMessage(action === "approve" ? "Student approved and parent notified." : "Student rejected.");
+    setBusy("");
+    setTimeout(() => router.refresh(), 900);
   }
 
   return (
@@ -54,7 +56,7 @@ export default function PendingStudentActions({ studentId }) {
           {busy === "reject" ? "Rejecting..." : "Reject"}
         </button>
       </div>
-      {message ? <p className="mt-2 text-sm text-rose-700">{message}</p> : null}
+      {message ? <p className={`mt-2 text-sm ${message.includes("Could not") ? "text-rose-700" : "text-emerald-700"}`}>{message}</p> : null}
     </div>
   );
 }

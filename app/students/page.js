@@ -56,6 +56,12 @@ export default async function StudentsPage() {
                     {student.parent_detail?.phone_number || "Not provided"}
                   </dd>
                 </div>
+                <div>
+                  <dt className="font-semibold text-slate-500">Courses</dt>
+                  <dd className="mt-1 text-slate-800">
+                    {student.course_names?.length ? student.course_names.join(", ") : "Not assigned"}
+                  </dd>
+                </div>
               </dl>
             </article>
           )} />
