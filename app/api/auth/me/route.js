@@ -46,14 +46,8 @@ export async function GET() {
   const accessToken = cookieStore.get(ACCESS_COOKIE)?.value;
   const refreshToken = cookieStore.get(REFRESH_COOKIE)?.value;
 
-  console.log("[auth-me] access_token cookie exists:", Boolean(accessToken));
-
   if (accessToken) {
     const djangoRes = await fetchCurrentUser(accessToken);
-    const responseText = await djangoRes.clone().text();
-
-    console.log("[auth-me] /api/auth/me/ status:", djangoRes.status);
-    console.log("[auth-me] /api/auth/me/ body:", responseText);
 
     if (djangoRes.ok) {
       const data = await djangoRes.json().catch(() => ({}));
@@ -72,18 +66,12 @@ export async function GET() {
 
   const { response: refreshRes, data: refreshData } = await refreshAccessToken(refreshToken);
 
-  console.log("[auth-me] /api/auth/refresh/ status:", refreshRes.status);
-  console.log("[auth-me] /api/auth/refresh/ body:", JSON.stringify(refreshData));
-
   if (!refreshRes.ok || !refreshData.access) {
     return authenticationRequiredResponse();
   }
 
   const retryRes = await fetchCurrentUser(refreshData.access);
   const retryData = await retryRes.json().catch(() => ({}));
-
-  console.log("[auth-me] retry /api/auth/me/ status:", retryRes.status);
-  console.log("[auth-me] retry /api/auth/me/ body:", JSON.stringify(retryData));
 
   if (!retryRes.ok) {
     return authenticationRequiredResponse();

@@ -19,7 +19,9 @@ const studentAcademyLinks = [
   { label: "Change Password", href: "/change-password" },
   { label: "Assignments", href: "/assignments" },
   { label: "My Courses", href: "/my-courses" },
+  { label: "Attendance", href: "/my-attendance" },
   { label: "Progress", href: "/my-progress" },
+  { label: "Payments", href: "/payments" },
   { label: "Notifications", href: "/notifications" },
 ];
 

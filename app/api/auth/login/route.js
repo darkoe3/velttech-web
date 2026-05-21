@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { ACCESS_COOKIE, REFRESH_COOKIE, authCookieOptions } from "@/lib/auth-cookies";
 import { API_URL } from "@/lib/api";
 
+function tokenPayload(token) {
+  try {
+    return JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString("utf8"));
+  } catch {
+    return {};
+  }
+}
+
 export async function POST(request) {
   const credentials = await request.json();
 
@@ -23,7 +31,14 @@ export async function POST(request) {
     );
   }
 
-  const response = NextResponse.json({ ok: true });
+  const payload = tokenPayload(data.access);
+  const response = NextResponse.json({
+    ok: true,
+    user: {
+      role: payload.role,
+      account_type: payload.account_type,
+    },
+  });
   response.cookies.set(ACCESS_COOKIE, data.access, authCookieOptions(15 * 60));
   response.cookies.set(
     REFRESH_COOKIE,

@@ -4,9 +4,16 @@ import { API_URL } from "@/lib/api";
 
 const protectedPaths = [
   "/dashboard",
+  "/assignments",
+  "/change-password",
+  "/my-attendance",
+  "/my-children",
   "/my-courses",
+  "/my-progress",
   "/notifications",
   "/payments",
+  "/instructor",
+  "/admin",
 ];
 
 function isProtectedPath(pathname) {
@@ -33,6 +40,24 @@ function isTokenValid(token) {
   }
 
   return payload.exp * 1000 > Date.now() + 30_000;
+}
+
+function defaultDashboardForRole(role) {
+  if (role === "instructor") return "/instructor/dashboard";
+  return "/dashboard";
+}
+
+function isRouteAllowedForRole(pathname, role) {
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return role === "admin";
+  }
+  if (pathname === "/instructor" || pathname.startsWith("/instructor/")) {
+    return role === "instructor" || role === "admin";
+  }
+  if (pathname === "/my-children" || pathname.startsWith("/my-children/")) {
+    return role === "parent" || role === "admin";
+  }
+  return true;
 }
 
 function clearAuthCookies(response) {
@@ -77,16 +102,20 @@ async function refreshAccessToken(request) {
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
+  const accessPayload = accessToken && isTokenValid(accessToken) ? getTokenPayload(accessToken) : null;
 
-  if ((pathname === "/login" || pathname === "/signup") && accessToken && isTokenValid(accessToken)) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  if ((pathname === "/login" || pathname === "/signup") && accessPayload) {
+    return NextResponse.redirect(new URL(defaultDashboardForRole(accessPayload.role), request.url));
   }
 
   if (!isProtectedPath(pathname)) {
     return NextResponse.next();
   }
 
-  if (accessToken && isTokenValid(accessToken)) {
+  if (accessPayload) {
+    if (!isRouteAllowedForRole(pathname, accessPayload.role)) {
+      return NextResponse.redirect(new URL(defaultDashboardForRole(accessPayload.role), request.url));
+    }
     return NextResponse.next();
   }
 
@@ -94,6 +123,20 @@ export async function middleware(request) {
 
   if (!refreshed?.access) {
     return redirectToLogin(request);
+  }
+  const refreshedPayload = getTokenPayload(refreshed.access);
+  if (!isRouteAllowedForRole(pathname, refreshedPayload?.role)) {
+    const redirect = NextResponse.redirect(
+      new URL(defaultDashboardForRole(refreshedPayload?.role), request.url),
+    );
+    redirect.cookies.set(ACCESS_COOKIE, refreshed.access, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 15 * 60,
+    });
+    return redirect;
   }
 
   const requestHeaders = new Headers(request.headers);
@@ -126,5 +169,19 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ["/login", "/signup", "/dashboard/:path*", "/my-courses/:path*", "/notifications/:path*", "/payments/:path*"],
+  matcher: [
+    "/login",
+    "/signup",
+    "/dashboard/:path*",
+    "/assignments/:path*",
+    "/change-password/:path*",
+    "/my-attendance/:path*",
+    "/my-children/:path*",
+    "/my-courses/:path*",
+    "/my-progress/:path*",
+    "/notifications/:path*",
+    "/payments/:path*",
+    "/instructor/:path*",
+    "/admin/:path*",
+  ],
 };

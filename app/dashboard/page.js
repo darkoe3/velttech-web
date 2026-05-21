@@ -12,6 +12,7 @@ import {
   formatMoney,
 } from "@/components/ui/academy";
 import PendingStudentActions from "@/components/admin/PendingStudentActions";
+import PendingAccountActions from "@/components/admin/PendingAccountActions";
 import AdminCharts from "@/components/admin/AdminCharts";
 import DashboardPaymentStatusActions from "@/components/payments/DashboardPaymentStatusActions";
 
@@ -30,8 +31,11 @@ const quickActions = {
   ],
   student: [
     { title: "My Courses", description: "Open your enrolled courses.", href: "/my-courses" },
+    { title: "Assignments", description: "Review and submit your class assignments.", href: "/assignments" },
+    { title: "Attendance", description: "Track your class attendance records.", href: "/my-attendance" },
+    { title: "Progress", description: "Read instructor feedback and progress updates.", href: "/my-progress" },
     { title: "Notifications", description: "Read the latest academy updates.", href: "/notifications" },
-    { title: "Payments", description: "Review your payment history.", href: "/payments" },
+    { title: "Payments", description: "Pay invoices and review receipts.", href: "/payments" },
   ],
   instructor: [
     { title: "Attendance", description: "Record class attendance.", href: "/instructor/attendance" },
@@ -94,22 +98,41 @@ function StudentDashboard({ dashboard }) {
   const courses = dashboard.courses || [];
   const notifications = dashboard.notifications || [];
   const attendanceSummary = dashboard.attendance_summary || {};
+  const assignmentSummary = dashboard.assignment_summary || {};
+  const paymentSummary = dashboard.payment_summary || {};
+  const recentPayments = dashboard.recent_payments || [];
+  const recentAttendance = dashboard.recent_attendance || [];
   const latestProgress = dashboard.latest_progress_report;
+  const selectedProgramme = dashboard.selected_programme || courses[0]?.title || "Pending assignment";
+  const enrollmentStatus = dashboard.enrollment_status || "pending";
 
   return (
     <>
-      <div className="grid gap-5 md:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <SummaryCard label="My Programme" value={selectedProgramme} detail={enrollmentStatus} />
         <SummaryCard label="My Courses" value={courses.length} />
+        <SummaryCard label="Assignments" value={assignmentSummary.total || 0} />
         <SummaryCard
           label="Attendance"
           value={`${attendanceSummary.present || 0}/${attendanceSummary.total || 0}`}
           detail="Present records"
         />
-        <SummaryCard label="Notifications" value={notifications.length} />
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[1.3fr_1fr]">
         <section>
+          <SectionHeading title="My Programme" description="Your current enrollment and course information." />
+          <AcademyCard className="mb-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-dark">{selectedProgramme}</h3>
+                <p className="mt-2 text-sm text-slate-600">Enrollment status: {enrollmentStatus}</p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
+                Student
+              </span>
+            </div>
+          </AcademyCard>
           <SectionHeading title="My Courses" description="Your current enrolled courses." />
           {courses.length === 0 ? (
             <EmptyState>You are not enrolled in any courses yet.</EmptyState>
@@ -130,15 +153,43 @@ function StudentDashboard({ dashboard }) {
 
         <div className="space-y-6">
           <section>
-            <SectionHeading title="Upcoming Classes" />
+            <SectionHeading title="Payment Status" />
             <AcademyCard>
-              <p className="text-sm text-slate-600">Upcoming classes will appear here soon.</p>
+              <p className="mb-4 text-2xl font-bold text-dark">
+                Pending payment: {formatMoney(paymentSummary.outstanding_amount)}
+              </p>
+              <DashboardPaymentStatusActions
+                outstandingAmount={paymentSummary.outstanding_amount}
+                pendingPaymentIds={paymentSummary.pending_payment_ids || []}
+              />
             </AcademyCard>
           </section>
           <section>
             <SectionHeading title="Assignments" />
             <AcademyCard>
-              <p className="text-sm text-slate-600">Assignments will appear here once published.</p>
+              <dl className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <dt className="font-semibold text-slate-500">Available</dt>
+                  <dd className="mt-1 font-bold text-dark">{assignmentSummary.total || 0}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-slate-500">Submitted</dt>
+                  <dd className="mt-1 font-bold text-dark">{assignmentSummary.submitted || 0}</dd>
+                </div>
+              </dl>
+              <Link href="/assignments" className="mt-5 inline-flex rounded-xl bg-dark px-4 py-2 text-sm font-bold text-white">
+                View Assignments
+              </Link>
+            </AcademyCard>
+          </section>
+          <section>
+            <SectionHeading title="Notifications" />
+            <AcademyCard>
+              <p className="text-3xl font-bold text-dark">{notifications.length}</p>
+              <p className="mt-2 text-sm text-slate-600">Recent academy updates</p>
+              <Link href="/notifications" className="mt-5 inline-flex rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
+                View Notifications
+              </Link>
             </AcademyCard>
           </section>
         </div>
@@ -150,7 +201,7 @@ function StudentDashboard({ dashboard }) {
 
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
         <section>
-          <SectionHeading title="My Attendance Summary" />
+          <SectionHeading title="My Attendance Summary" actionHref="/my-attendance" actionLabel="View all ->" />
           <AcademyCard>
             <dl className="grid grid-cols-2 gap-4 text-sm">
               <div><dt className="font-semibold text-slate-500">Present</dt><dd className="mt-1 font-bold text-dark">{attendanceSummary.present || 0}</dd></div>
@@ -159,6 +210,21 @@ function StudentDashboard({ dashboard }) {
               <div><dt className="font-semibold text-slate-500">Excused</dt><dd className="mt-1 font-bold text-dark">{attendanceSummary.excused || 0}</dd></div>
             </dl>
           </AcademyCard>
+          {recentAttendance.length ? (
+            <div className="mt-4 space-y-3">
+              {recentAttendance.map((record) => (
+                <AcademyCard key={record.id}>
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <span className="font-bold text-dark">{record.course_title}</span>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
+                      {record.status}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-500">{formatDate(record.date)}</p>
+                </AcademyCard>
+              ))}
+            </div>
+          ) : null}
         </section>
         <section>
           <SectionHeading title="My Progress Report" />
@@ -175,6 +241,29 @@ function StudentDashboard({ dashboard }) {
           )}
         </section>
       </div>
+
+      <section className="mt-8">
+        <SectionHeading title="Recent Payments" actionHref="/payments" actionLabel="View all ->" />
+        {recentPayments.length === 0 ? (
+          <EmptyState>No payments recorded yet.</EmptyState>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {recentPayments.map((payment) => (
+              <AcademyCard key={payment.id}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-dark">{payment.course_title}</h3>
+                    <p className="mt-1 text-sm text-slate-600">{formatMoney(payment.amount)}</p>
+                  </div>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
+                    {payment.status}
+                  </span>
+                </div>
+              </AcademyCard>
+            ))}
+          </div>
+        )}
+      </section>
     </>
   );
 }
@@ -342,6 +431,7 @@ function AdminDashboard({ dashboard }) {
   const recentPayments = dashboard.recent_payments || [];
   const notifications = dashboard.notifications || [];
   const pendingChildren = dashboard.pending_children || [];
+  const pendingAccounts = dashboard.pending_accounts || [];
   const approvedUnassignedChildren = dashboard.approved_unassigned_children || [];
   const latestActivityLogs = dashboard.latest_activity_logs || [];
 
@@ -351,6 +441,7 @@ function AdminDashboard({ dashboard }) {
         <SummaryCard label="Total Students" value={summary.total_students || 0} icon={Users} />
         <SummaryCard label="Approved Students" value={summary.approved_students || 0} icon={CheckCircle2} />
         <SummaryCard label="Pending Approvals" value={summary.pending_approvals || 0} icon={Hourglass} />
+        <SummaryCard label="Pending Accounts" value={summary.pending_accounts || 0} icon={Clock} />
         <SummaryCard label="Total Courses" value={summary.total_courses || 0} icon={BookOpen} />
         <SummaryCard label="Total Payments" value={summary.total_payments || 0} icon={CreditCard} />
         <SummaryCard label="Total Paid Amount" value={formatMoney(summary.total_paid_amount)} icon={DollarSign} />
@@ -360,6 +451,33 @@ function AdminDashboard({ dashboard }) {
 
       <div className="mt-8 grid gap-6 xl:grid-cols-3">
         <section>
+          <SectionHeading title="Pending Accounts" />
+          {pendingAccounts.length === 0 ? (
+            <EmptyState>No accounts are waiting for approval.</EmptyState>
+          ) : (
+            <div className="space-y-4">
+              {pendingAccounts.map((account) => (
+                <AcademyCard key={account.id}>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-bold text-dark">{account.full_name}</h3>
+                      <p className="mt-1 text-sm text-slate-600">{account.email}</p>
+                    </div>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
+                      {account.account_type === "adult_learner" ? "Adult learner" : "Parent"}
+                    </span>
+                  </div>
+                  <dl className="mt-3 space-y-1 text-sm text-slate-600">
+                    <div><dt className="inline font-semibold">Phone:</dt> <dd className="inline">{account.phone_number || "Not provided"}</dd></div>
+                    <div><dt className="inline font-semibold">Programme:</dt> <dd className="inline">{account.programme_of_interest || "Not selected"}</dd></div>
+                  </dl>
+                  <PendingAccountActions accountId={account.id} />
+                </AcademyCard>
+              ))}
+            </div>
+          )}
+        </section>
+        <section>
           <SectionHeading title="Pending Students" />
           {pendingChildren.length === 0 ? (
             <EmptyState>No children are waiting for approval.</EmptyState>
@@ -368,7 +486,14 @@ function AdminDashboard({ dashboard }) {
               {pendingChildren.map((child) => (
                 <AcademyCard key={child.id}>
                   <h3 className="font-bold text-dark">{child.full_name}</h3>
-                  <p className="mt-2 text-sm text-slate-600">Awaiting admin approval.</p>
+                  <p className="mt-2 text-sm text-slate-600">
+                    {child.learner_type === "adult" ? "Adult learner" : "Child learner"} awaiting admin approval.
+                  </p>
+                  <dl className="mt-3 space-y-1 text-sm text-slate-600">
+                    <div><dt className="inline font-semibold">Email:</dt> <dd className="inline">{child.email || "Not provided"}</dd></div>
+                    <div><dt className="inline font-semibold">Phone:</dt> <dd className="inline">{child.phone_number || "Not provided"}</dd></div>
+                    <div><dt className="inline font-semibold">Programme:</dt> <dd className="inline">{child.programme_of_interest || "Not selected"}</dd></div>
+                  </dl>
                   <PendingStudentActions studentId={child.id} />
                 </AcademyCard>
               ))}
@@ -438,7 +563,7 @@ function AdminDashboard({ dashboard }) {
               <AcademyCard key={child.id}>
                 <h3 className="font-bold text-dark">{child.full_name}</h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Approved and ready for course assignment.
+                  {child.learner_type === "adult" ? "Adult learner" : "Child learner"} approved and ready for course assignment.
                 </p>
                 <Link
                   href={`/admin/enrollments/new?student=${child.id}`}

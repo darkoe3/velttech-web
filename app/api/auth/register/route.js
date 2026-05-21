@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { ACCESS_COOKIE, REFRESH_COOKIE, authCookieOptions } from "@/lib/auth-cookies";
 import { API_URL } from "@/lib/api";
 
 export async function POST(request) {
@@ -17,23 +16,12 @@ export async function POST(request) {
     return NextResponse.json(registerData, { status: registerRes.status });
   }
 
-  const loginRes = await fetch(`${API_URL}/api/auth/login/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: payload.email,
-      password: payload.password,
-    }),
-    cache: "no-store",
-  });
-
-  const loginData = await loginRes.json().catch(() => ({}));
-  if (!loginRes.ok) {
-    return NextResponse.json({ ok: true }, { status: 201 });
-  }
-
-  const response = NextResponse.json({ ok: true }, { status: 201 });
-  response.cookies.set(ACCESS_COOKIE, loginData.access, authCookieOptions(15 * 60));
-  response.cookies.set(REFRESH_COOKIE, loginData.refresh, authCookieOptions(7 * 24 * 60 * 60));
-  return response;
+  return NextResponse.json(
+    {
+      ok: true,
+      pending_approval: true,
+      detail: "Your account has been submitted successfully and is awaiting admin approval.",
+    },
+    { status: 201 },
+  );
 }

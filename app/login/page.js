@@ -10,7 +10,7 @@ function LoginForm() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const nextPath = searchParams.get("next") || "/dashboard";
+  const nextPath = searchParams.get("next");
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -33,7 +33,8 @@ function LoginForm() {
       return;
     }
 
-    router.replace(nextPath.startsWith("/") ? nextPath : "/dashboard");
+    const defaultPath = data.user?.role === "instructor" ? "/instructor/dashboard" : "/dashboard";
+    router.replace(nextPath?.startsWith("/") ? nextPath : defaultPath);
     router.refresh();
   }
 

@@ -80,8 +80,6 @@ export default function NewChildPage() {
       emergency_contact: form.emergency_contact,
     };
 
-    console.log("Add child request payload", payload);
-
     const response = await fetch("/api/my-children", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -90,18 +88,10 @@ export default function NewChildPage() {
     });
 
     const responseText = await response.text();
-    const { parsed, message } = parseResponseBody(responseText);
-
-    console.log("Add child response status", response.status, response.statusText);
-    console.log("Add child response body", responseText);
+    const { message } = parseResponseBody(responseText);
 
     if (!response.ok) {
-      console.error("Add child failed", {
-        status: response.status,
-        statusText: response.statusText,
-        body: responseText,
-        parsed,
-      });
+      console.error("Add child failed", response.status, response.statusText);
 
       setError(message || "We could not add this child right now.");
       setSubmitting(false);
