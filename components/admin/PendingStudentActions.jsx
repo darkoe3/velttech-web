@@ -7,6 +7,11 @@ function formatMessage(body) {
   if (!body) return "";
   try {
     const parsed = JSON.parse(body);
+    if (parsed.message) {
+      if (parsed.invoice_created) return "Student approved and invoice created successfully.";
+      if (parsed.payment_id) return "Student approved. Invoice already exists.";
+      return parsed.message;
+    }
     return parsed.detail || JSON.stringify(parsed);
   } catch {
     return body;
@@ -31,7 +36,7 @@ export default function PendingStudentActions({ studentId }) {
       setBusy("");
       return;
     }
-    setMessage(action === "approve" ? "Student approved and parent notified." : "Student rejected.");
+    setMessage(action === "approve" ? formatMessage(body) : "Student rejected.");
     setBusy("");
     setTimeout(() => router.refresh(), 900);
   }

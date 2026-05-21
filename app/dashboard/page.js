@@ -189,8 +189,9 @@ function ParentDashboard({ dashboard }) {
     <>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         <SummaryCard label="My Children" value={children.length} />
-        <SummaryCard label="Paid Payments" value={paymentSummary.completed || 0} />
         <SummaryCard label="Pending Payments" value={paymentSummary.pending || 0} />
+        <SummaryCard label="Outstanding Balance" value={formatMoney(paymentSummary.outstanding_amount)} />
+        <SummaryCard label="Paid Payments" value={paymentSummary.completed || 0} />
         <SummaryCard label="Total Paid" value={formatMoney(paymentSummary.completed_amount)} />
       </div>
 

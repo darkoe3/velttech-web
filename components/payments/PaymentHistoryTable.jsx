@@ -69,6 +69,7 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
       totalBalance: filteredRows.reduce((total, row) => total + Number(row.balance || 0), 0),
       paidRecords: filteredRows.filter((row) => row.payment_status === "paid").length,
       partialRecords: filteredRows.filter((row) => row.payment_status === "partial").length,
+      pendingRecords: filteredRows.filter((row) => row.payment_status === "pending").length,
       unpaidRecords: filteredRows.filter((row) => row.payment_status === "unpaid").length,
     }),
     [filteredRows],
@@ -221,6 +222,8 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
           <option value="">All statuses</option>
           <option value="paid">Paid</option>
           <option value="partial">Partial</option>
+          <option value="pending">Pending</option>
+          <option value="failed">Failed</option>
           <option value="unpaid">Unpaid</option>
         </select>
       </div>
