@@ -27,6 +27,8 @@ const initialForm = {
   phone_number: "",
   account_type: "parent_registering_child",
   programme_of_interest: "",
+  website: "",
+  company: "",
   password: "",
   confirm_password: "",
 };
@@ -92,6 +94,28 @@ export default function SignupPage() {
         </p>
         <h1 className="mt-2 text-3xl font-bold text-dark">Create account</h1>
         <form className="mt-8 grid gap-5 sm:grid-cols-2" onSubmit={handleSubmit}>
+          <div className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+            <label htmlFor="website">Website</label>
+            <input
+              id="website"
+              name="website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={form.website}
+              onChange={updateField}
+            />
+            <label htmlFor="company">Company</label>
+            <input
+              id="company"
+              name="company"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={form.company}
+              onChange={updateField}
+            />
+          </div>
           {isAdultLearner ? (
             <div className="sm:col-span-2">
               <label htmlFor="full_name" className="text-sm font-semibold text-slate-700">

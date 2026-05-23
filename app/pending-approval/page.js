@@ -9,9 +9,9 @@ export default function PendingApprovalPage() {
           <Clock3 className="h-7 w-7" aria-hidden="true" />
         </div>
         <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-secondary">
-          Application received
+          Application Received
         </p>
-        <h1 className="mt-2 text-3xl font-bold text-dark">Awaiting admin review</h1>
+        <h1 className="mt-2 text-3xl font-bold text-dark">Awaiting Admin Approval</h1>
         <p className="mt-4 text-base leading-7 text-slate-600">
           Your account has been submitted successfully and is awaiting admin approval.
           You will be notified once approved.

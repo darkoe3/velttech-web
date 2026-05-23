@@ -466,6 +466,14 @@ function AdminDashboard({ dashboard }) {
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
                       {account.account_type === "adult_learner" ? "Adult learner" : "Parent"}
                     </span>
+                    {account.is_suspicious ? (
+                      <span
+                        title={account.suspicious_reason || "Suspicious registration"}
+                        className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800"
+                      >
+                        Suspicious
+                      </span>
+                    ) : null}
                   </div>
                   <dl className="mt-3 space-y-1 text-sm text-slate-600">
                     <div><dt className="inline font-semibold">Phone:</dt> <dd className="inline">{account.phone_number || "Not provided"}</dd></div>
@@ -486,9 +494,19 @@ function AdminDashboard({ dashboard }) {
               {pendingChildren.map((child) => (
                 <AcademyCard key={child.id}>
                   <h3 className="font-bold text-dark">{child.full_name}</h3>
-                  <p className="mt-2 text-sm text-slate-600">
-                    {child.learner_type === "adult" ? "Adult learner" : "Child learner"} awaiting admin approval.
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <p className="text-sm text-slate-600">
+                      {child.learner_type === "adult" ? "Adult learner" : "Child learner"} awaiting admin approval.
+                    </p>
+                    {child.is_suspicious ? (
+                      <span
+                        title={child.suspicious_reason || "Suspicious registration"}
+                        className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800"
+                      >
+                        Suspicious
+                      </span>
+                    ) : null}
+                  </div>
                   <dl className="mt-3 space-y-1 text-sm text-slate-600">
                     <div><dt className="inline font-semibold">Email:</dt> <dd className="inline">{child.email || "Not provided"}</dd></div>
                     <div><dt className="inline font-semibold">Phone:</dt> <dd className="inline">{child.phone_number || "Not provided"}</dd></div>
