@@ -5,21 +5,19 @@ import { fetchInternalJson } from "@/lib/instructor-page-fetch";
 export default async function AdminPaymentsPage() {
   try {
     const rows = await fetchInternalJson("/api/admin/payments/history", "admin-payments-page");
-    const totalExpected = rows.reduce((total, row) => total + Number(row.expected_amount || 0), 0);
     const totalPaid = rows.reduce((total, row) => total + Number(row.amount_paid || 0), 0);
-    const totalBalance = rows.reduce((total, row) => total + Number(row.balance || 0), 0);
+    const outstandingMonthlyPayment = rows.reduce((total, row) => total + Number(row.amount_due || 0), 0);
     const paidRecords = rows.filter((row) => row.payment_status === "paid").length;
-    const unpaidRecords = rows.filter((row) => row.payment_status === "unpaid").length;
+    const pendingRecords = rows.filter((row) => row.payment_status === "pending").length;
 
     return (
       <section className="mx-auto max-w-7xl px-5 py-10 sm:px-6 lg:px-8">
         <SectionHeading title="Payment History" description="Monthly payment ledger across all enrolled students." />
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
-          <SummaryCard label="Total Expected" value={formatMoney(totalExpected)} />
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           <SummaryCard label="Amount Paid" value={formatMoney(totalPaid)} />
-          <SummaryCard label="Total Balance" value={formatMoney(totalBalance)} />
+          <SummaryCard label="Outstanding Monthly Payment" value={formatMoney(outstandingMonthlyPayment)} />
           <SummaryCard label="Paid Records" value={paidRecords} />
-          <SummaryCard label="Unpaid Records" value={unpaidRecords} />
+          <SummaryCard label="Pending Records" value={pendingRecords} />
         </div>
         <section className="mt-8">
           {rows.length === 0 ? <EmptyState>No payment records exist yet.</EmptyState> : <PaymentHistoryTable rows={rows} admin />}

@@ -46,6 +46,14 @@ function paymentPeriod(row) {
   return row.year || "Not set";
 }
 
+function paymentAmount(row) {
+  return Number(row.amount ?? row.amount_paid ?? row.amount_due ?? 0);
+}
+
+function receiptAmount(row) {
+  return Number(row.amount_paid || row.amount || 0);
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -86,9 +94,7 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
 
   const summary = useMemo(
     () => ({
-      totalExpected: filteredRows.reduce((total, row) => total + Number(row.expected_amount || 0), 0),
       totalPaid: filteredRows.reduce((total, row) => total + Number(row.amount_paid || 0), 0),
-      totalBalance: filteredRows.reduce((total, row) => total + Number(row.balance || 0), 0),
       paidRecords: filteredRows.filter((row) => row.payment_status === "paid").length,
       partialRecords: filteredRows.filter((row) => row.payment_status === "partial").length,
       pendingRecords: filteredRows.filter((row) => row.payment_status === "pending").length,
@@ -147,7 +153,7 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
       ["Parent Name", row.parent_name || "Not applicable"],
       ["Programme", row.course_title],
       ["Payment Period", paymentPeriod(row)],
-      ["Amount Paid", formatMoney(row.amount_paid)],
+      ["Amount Paid", formatMoney(receiptAmount(row))],
       ["Payment Method", humanize(row.payment_method)],
       ["Transaction Reference", row.reference || "Not provided"],
       ["Payment Status", humanize(row.payment_status)],
@@ -262,7 +268,7 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
       ["Parent Name", row.parent_name || "Not applicable"],
       ["Programme", row.course_title],
       ["Payment Period", paymentPeriod(row)],
-      ["Amount Paid", formatMoney(row.amount_paid)],
+      ["Amount Paid", formatMoney(receiptAmount(row))],
       ["Payment Method", humanize(row.payment_method)],
       ["Transaction Reference", row.reference || "Not provided"],
       ["Payment Status", humanize(row.payment_status)],
@@ -350,18 +356,12 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-4 py-3">{admin ? "Student" : "Child"}</th>
-              {admin ? <th className="px-4 py-3">Parent</th> : null}
-              <th className="px-4 py-3">Course</th>
+              <th className="px-4 py-3">Student</th>
+              <th className="px-4 py-3">Programme</th>
               <th className="px-4 py-3">Payment Period</th>
-              <th className="px-4 py-3">Expected Fee</th>
-              <th className="px-4 py-3">Amount Paid</th>
-              <th className="px-4 py-3">Balance</th>
+              <th className="px-4 py-3">Amount</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Method</th>
-              <th className="px-4 py-3">Reference</th>
-              <th className="px-4 py-3">Payment Date</th>
-              <th className="px-4 py-3">Paid Date</th>
+              <th className="px-4 py-3">Payment Method</th>
               <th className="px-4 py-3">Receipt Number</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
@@ -370,26 +370,15 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
             {filteredRows.map((row, index) => (
               <tr key={`${row.student_id}-${row.course_title}-${row.year}-${row.month}-${index}`}>
                 <td className="whitespace-nowrap px-4 py-3 font-semibold text-dark">{row.student_name}</td>
-                {admin ? (
-                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">
-                    <div>{row.parent_name || "Not provided"}</div>
-                    <div className="text-xs text-slate-400">{row.parent_phone || "No phone"}</div>
-                  </td>
-                ) : null}
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{row.course_title}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{paymentPeriod(row)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatMoney(row.expected_amount)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatMoney(row.amount_paid)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatMoney(row.balance)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatMoney(paymentAmount(row))}</td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusStyles[row.payment_status]}`}>
                     {humanize(row.payment_status)}
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{humanize(row.payment_method)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{row.reference || "Not provided"}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(row.payment_date)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(row.paid_at)}</td>
                 <td className="whitespace-nowrap px-4 py-3 font-semibold text-dark">{row.receipt_number || "Not issued"}</td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <div className="flex flex-wrap gap-2">
@@ -450,7 +439,7 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
                 ["Parent name", receipt.parent_name || "Not applicable"],
                 ["Programme", receipt.course_title],
                 ["Payment period", paymentPeriod(receipt)],
-                ["Amount paid", formatMoney(receipt.amount_paid)],
+                ["Amount paid", formatMoney(receiptAmount(receipt))],
                 ["Payment method", humanize(receipt.payment_method)],
                 ["Transaction reference", receipt.reference || "Not provided"],
                 ["Payment status", humanize(receipt.payment_status)],

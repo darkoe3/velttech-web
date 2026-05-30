@@ -92,7 +92,7 @@ export default function DashboardPaymentStatusActions({
         {hasOutstanding ? (
           <dl className="grid gap-3 text-sm sm:grid-cols-3">
             <div>
-              <dt className="font-semibold text-slate-600">Current Month</dt>
+              <dt className="font-semibold text-slate-600">Current Period</dt>
               <dd className="mt-1 font-bold text-dark">{currentPeriod || "Current period"}</dd>
             </div>
             <div>
@@ -107,7 +107,7 @@ export default function DashboardPaymentStatusActions({
         ) : (
           <dl className="grid gap-3 text-sm sm:grid-cols-3">
             <div>
-              <dt className="font-semibold text-slate-600">Current Month</dt>
+              <dt className="font-semibold text-slate-600">Current Period</dt>
               <dd className="mt-1 font-bold text-dark">{currentPeriod || "Current period"}</dd>
             </div>
             <div>
