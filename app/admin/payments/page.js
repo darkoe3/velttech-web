@@ -16,7 +16,7 @@ export default async function AdminPaymentsPage() {
         <SectionHeading title="Payment History" description="Monthly payment ledger across all enrolled students." />
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
           <SummaryCard label="Total Expected" value={formatMoney(totalExpected)} />
-          <SummaryCard label="Total Paid" value={formatMoney(totalPaid)} />
+          <SummaryCard label="Amount Paid" value={formatMoney(totalPaid)} />
           <SummaryCard label="Total Balance" value={formatMoney(totalBalance)} />
           <SummaryCard label="Paid Records" value={paidRecords} />
           <SummaryCard label="Unpaid Records" value={unpaidRecords} />

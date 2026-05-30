@@ -14,7 +14,7 @@ export default async function PaymentsPage() {
       <section className="mx-auto max-w-7xl px-5 py-10 sm:px-6 lg:px-8">
         <SectionHeading title="Payments" description="Monthly payment history for your children." />
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          <SummaryCard label="Total Paid" value={formatMoney(totalPaid)} />
+          <SummaryCard label="Amount Paid" value={formatMoney(totalPaid)} />
           <SummaryCard label="Outstanding Balance" value={formatMoney(outstandingBalance)} />
           <SummaryCard label="Paid Months" value={paidMonths} />
           <SummaryCard label="Unpaid Months" value={unpaidMonths} />

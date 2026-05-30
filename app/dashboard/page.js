@@ -14,7 +14,7 @@ import {
 import PendingStudentActions from "@/components/admin/PendingStudentActions";
 import PendingAccountActions from "@/components/admin/PendingAccountActions";
 import AdminCharts from "@/components/admin/AdminCharts";
-import DashboardPaymentStatusActions from "@/components/payments/DashboardPaymentStatusActions";
+import DashboardPaymentStatusActions, { PayNowButton } from "@/components/payments/DashboardPaymentStatusActions";
 
 const quickActions = {
   admin: [
@@ -43,6 +43,33 @@ const quickActions = {
     { title: "Progress Reports", description: "Update student progress.", href: "/instructor/progress" },
   ],
 };
+
+const monthNames = [
+  "",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+function currentPeriodLabel() {
+  const now = new Date();
+  return `${monthNames[now.getMonth() + 1]} ${now.getFullYear()}`;
+}
+
+function paymentPeriod(payment) {
+  if (payment?.payment_period) return payment.payment_period;
+  if (payment?.month && payment?.year) return `${monthNames[payment.month]} ${payment.year}`;
+  return "";
+}
 
 function QuickActions({ role }) {
   const actions = quickActions[role] || quickActions.student;
@@ -273,15 +300,19 @@ function ParentDashboard({ dashboard }) {
   const notifications = dashboard.notifications || [];
   const recentPayments = dashboard.recent_payments || [];
   const paymentSummary = dashboard.payment_summary || {};
+  const currentPeriod = paymentSummary.current_payment_period || currentPeriodLabel();
+  const outstandingMonthlyPayment = Number(paymentSummary.outstanding_monthly_payment ?? paymentSummary.outstanding_amount ?? 0);
+  const currentAmountPaid = Number(paymentSummary.current_amount_paid ?? 0);
+  const lastPayment = paymentSummary.last_payment;
+  const currentPendingPaymentIds = paymentSummary.current_pending_payment_ids || paymentSummary.pending_payment_ids || [];
 
   return (
     <>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard label="My Children" value={children.length} />
+        <SummaryCard label="Children" value={children.length} />
         <SummaryCard label="Pending Payments" value={paymentSummary.pending || 0} />
-        <SummaryCard label="Outstanding Balance" value={formatMoney(paymentSummary.outstanding_amount)} />
-        <SummaryCard label="Paid Payments" value={paymentSummary.completed || 0} />
-        <SummaryCard label="Total Paid" value={formatMoney(paymentSummary.completed_amount)} />
+        <SummaryCard label="Amount Paid" value={formatMoney(paymentSummary.completed_amount)} />
+        <SummaryCard label="Outstanding Monthly Payment" value={formatMoney(outstandingMonthlyPayment)} />
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[1.3fr_1fr]">
@@ -305,7 +336,7 @@ function ParentDashboard({ dashboard }) {
                     </span>
                   </div>
                   <div className="mt-4">
-                    <p className="text-sm font-semibold text-slate-500">Enrolled courses</p>
+                    <p className="text-sm font-semibold text-slate-500">Programme/course</p>
                     {child.courses.length === 0 ? (
                       <p className="mt-2 text-sm text-slate-600">No enrolled courses yet.</p>
                     ) : (
@@ -321,6 +352,27 @@ function ParentDashboard({ dashboard }) {
                       </div>
                     )}
                   </div>
+                  <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm">
+                    <p className="font-semibold text-slate-500">Payment status for {child.current_payment_period || currentPeriod}</p>
+                    <p className="mt-1 font-bold text-dark">
+                      {child.current_payment_status === "pending" ? "Pending" : child.current_payment_status === "paid" ? "Paid" : "No Outstanding Payment"}
+                    </p>
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <Link href="/my-progress" className="inline-flex min-h-11 items-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
+                      View Progress
+                    </Link>
+                    <Link href="/assignments" className="inline-flex min-h-11 items-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
+                      View Assignments
+                    </Link>
+                    {Number(child.outstanding_amount || 0) > 0 ? (
+                      <PayNowButton
+                        outstandingAmount={child.outstanding_amount}
+                        pendingPaymentIds={child.pending_payment_ids || []}
+                        className="px-4"
+                      />
+                    ) : null}
+                  </div>
                 </AcademyCard>
               ))}
             </div>
@@ -331,26 +383,37 @@ function ParentDashboard({ dashboard }) {
           <section>
             <SectionHeading title="Payment Status" />
             <AcademyCard>
-              <dl className="space-y-4 text-sm">
-                <div className="flex items-center justify-between gap-4">
-                  <dt className="font-semibold text-slate-500">Total payments</dt>
-                  <dd className="font-bold text-dark">{paymentSummary.total || 0}</dd>
+              <div className="mb-5 grid gap-3 text-sm">
+                <div className="rounded-xl bg-slate-50 px-4 py-3">
+                  <p className="font-semibold text-slate-500">Current Payment Period</p>
+                  <p className="mt-1 text-lg font-bold text-dark">{currentPeriod}</p>
                 </div>
-                <div className="flex items-center justify-between gap-4">
-                  <dt className="font-semibold text-slate-500">Completed</dt>
-                  <dd className="font-bold text-dark">{paymentSummary.completed || 0}</dd>
+                <div className="rounded-xl bg-slate-50 px-4 py-3">
+                  <p className="font-semibold text-slate-500">Last Payment</p>
+                  <p className="mt-1 font-bold text-dark">
+                    {lastPayment ? `${formatMoney(lastPayment.amount)} paid for ${lastPayment.payment_period}` : "No payment recorded yet"}
+                  </p>
                 </div>
-                <div className="flex items-center justify-between gap-4">
-                  <dt className="font-semibold text-slate-500">Pending</dt>
-                  <dd className="font-bold text-dark">{paymentSummary.pending || 0}</dd>
-                </div>
-              </dl>
+              </div>
               <div className="mt-5">
                 <DashboardPaymentStatusActions
-                  outstandingAmount={paymentSummary.outstanding_amount}
-                  pendingPaymentIds={paymentSummary.pending_payment_ids || []}
+                  outstandingAmount={outstandingMonthlyPayment}
+                  pendingPaymentIds={currentPendingPaymentIds}
+                  currentPeriod={currentPeriod}
+                  amountPaid={currentAmountPaid}
+                  showPaymentsWhenSettled={false}
                 />
               </div>
+              {paymentSummary.total ? null : (
+                <p className="mt-4 text-sm text-slate-600">
+                  No payment record has been created yet. Once Velttech Academy creates an invoice, it will appear here.
+                </p>
+              )}
+              {paymentSummary.total && !outstandingMonthlyPayment ? (
+                <p className="mt-4 text-sm text-slate-600">
+                  You have no outstanding payment for the current period.
+                </p>
+              ) : null}
             </AcademyCard>
           </section>
           <section>
@@ -399,7 +462,7 @@ function ParentDashboard({ dashboard }) {
         <section>
           <SectionHeading title="Recent Payments" />
           {recentPayments.length === 0 ? (
-            <EmptyState>No payments recorded yet.</EmptyState>
+            <EmptyState>No payment record has been created yet. Once Velttech Academy creates an invoice, it will appear here.</EmptyState>
           ) : (
             <div className="space-y-4">
               {recentPayments.map((payment) => (
@@ -408,6 +471,7 @@ function ParentDashboard({ dashboard }) {
                     <div>
                       <h3 className="font-bold text-dark">{payment.course_title}</h3>
                       <p className="mt-1 text-sm text-slate-600">{payment.student_name}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-500">{paymentPeriod(payment) || currentPeriod}</p>
                     </div>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
                       {payment.status}
@@ -444,7 +508,7 @@ function AdminDashboard({ dashboard }) {
         <SummaryCard label="Pending Accounts" value={summary.pending_accounts || 0} icon={Clock} />
         <SummaryCard label="Total Courses" value={summary.total_courses || 0} icon={BookOpen} />
         <SummaryCard label="Total Payments" value={summary.total_payments || 0} icon={CreditCard} />
-        <SummaryCard label="Total Paid Amount" value={formatMoney(summary.total_paid_amount)} icon={DollarSign} />
+        <SummaryCard label="Amount Paid" value={formatMoney(summary.total_paid_amount)} icon={DollarSign} />
         <SummaryCard label="Current Month Revenue" value={formatMoney(summary.current_month_revenue)} icon={ListChecks} />
         <SummaryCard label="Pending Payments" value={summary.pending_payments || 0} icon={Clock} />
       </div>

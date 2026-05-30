@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { Printer, X } from "lucide-react";
+import { Download, Printer, X } from "lucide-react";
+import { jsPDF } from "jspdf";
 import { formatDate, formatMoney, humanize } from "@/components/ui/academy";
 import {
   exportPaymentsToExcel,
@@ -32,6 +33,27 @@ const monthNames = [
   "November",
   "December",
 ];
+
+const supportDetails = {
+  email: "info@velttech.org",
+  phone: "0555106820",
+  website: "https://velttech.org",
+};
+
+function paymentPeriod(row) {
+  if (row.payment_period) return row.payment_period;
+  if (row.month && row.year) return `${monthNames[row.month]} ${row.year}`;
+  return row.year || "Not set";
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
 
 export default function PaymentHistoryTable({ rows, admin = false }) {
   const [month, setMonth] = useState("");
@@ -118,48 +140,67 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
   }
 
   function receiptMarkup(row) {
-    const printedDate = new Intl.DateTimeFormat("en-GH", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date());
+    const fields = [
+      ["Receipt Number", row.receipt_number],
+      ["Date Paid", formatDate(row.paid_at || row.payment_date)],
+      ["Student Name", row.student_name],
+      ["Parent Name", row.parent_name || "Not applicable"],
+      ["Programme", row.course_title],
+      ["Payment Period", paymentPeriod(row)],
+      ["Amount Paid", formatMoney(row.amount_paid)],
+      ["Payment Method", humanize(row.payment_method)],
+      ["Transaction Reference", row.reference || "Not provided"],
+      ["Payment Status", humanize(row.payment_status)],
+    ];
     return `
       <html>
         <head>
-          <title>${row.receipt_number}</title>
+          <title>${escapeHtml(row.receipt_number)}</title>
           <style>
-            @page{margin:24mm}
-            body{font-family:Arial,sans-serif;color:#0f172a;background:#fff}
-            .brand{display:flex;align-items:center;gap:16px;border-bottom:4px solid #F4C318;padding-bottom:18px;margin-bottom:24px}
-            .brand img{height:56px;width:auto}
-            h1{margin:0;font-size:24px}
-            .meta{color:#475569;margin-top:6px}
-            table{width:100%;border-collapse:collapse;margin-top:18px}
-            td{padding:12px;border-bottom:1px solid #e2e8f0}
-            td:first-child{font-weight:bold;width:35%;color:#334155}
+            @page{size:A4;margin:18mm}
+            *{box-sizing:border-box}
+            body{font-family:Arial,sans-serif;color:#0f172a;background:#fff;margin:0}
+            .receipt{min-height:260mm;display:flex;flex-direction:column}
+            .brand{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #F4C318;padding-bottom:16px;margin-bottom:24px}
+            .brand-left{display:flex;align-items:center;gap:16px}
+            .brand img{height:58px;width:auto}
+            h1{margin:0;font-size:24px;letter-spacing:0}
+            .meta{color:#475569;margin-top:6px;font-size:13px}
+            .badge{border:1px solid #cbd5e1;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;text-transform:uppercase}
+            table{width:100%;border-collapse:collapse;margin-top:10px;border:1px solid #e2e8f0}
+            td{padding:13px 14px;border-bottom:1px solid #e2e8f0;vertical-align:top}
+            tr:last-child td{border-bottom:0}
+            td:first-child{font-weight:bold;width:34%;color:#334155;background:#f8fafc}
             .status{display:inline-block;border-radius:999px;background:#7AC94333;padding:6px 12px;font-weight:bold}
-            .footer{margin-top:28px;color:#475569;font-size:13px}
+            .support{margin-top:24px;border-top:1px solid #e2e8f0;padding-top:14px;color:#334155;font-size:13px;line-height:1.7}
+            .footer{margin-top:auto;color:#475569;font-size:12px;border-top:1px solid #e2e8f0;padding-top:12px}
           </style>
         </head>
         <body>
-          <div class="brand">
-            <img src="/images/velttech-logo.png" alt="Velttech logo" />
-            <div>
-              <h1>Velttech Coding Academy</h1>
-              <div class="meta">Official payment receipt</div>
+          <main class="receipt">
+            <div class="brand">
+              <div class="brand-left">
+                <img src="/images/velttech-logo.png" alt="Velttech Academy logo" />
+                <div>
+                  <h1>Velttech Academy</h1>
+                  <div class="meta">Official payment receipt</div>
+                </div>
+              </div>
+              <div class="badge">Receipt</div>
             </div>
-          </div>
-          <table>
-            <tr><td>Receipt number</td><td>${row.receipt_number}</td></tr>
-            <tr><td>${admin ? "Student" : "Child"} name</td><td>${row.student_name}</td></tr>
-            <tr><td>Parent name</td><td>${row.parent_name || "Not provided"}</td></tr>
-            <tr><td>Course</td><td>${row.course_title}</td></tr>
-            <tr><td>Amount</td><td>${formatMoney(row.amount_paid)}</td></tr>
-            <tr><td>Payment date</td><td>${formatDate(row.paid_at || row.payment_date)}</td></tr>
-            <tr><td>Paystack reference</td><td>${row.reference || "Not provided"}</td></tr>
-            <tr><td>Payment status</td><td><span class="status">${humanize(row.payment_status)}</span></td></tr>
-            <tr><td>Printed date</td><td>${printedDate}</td></tr>
-          </table>
-          <p class="footer">Thank you for choosing Velttech Coding Academy.</p>
+            <table>
+              ${fields.map(([label, value]) => (
+                `<tr><td>${escapeHtml(label)}</td><td>${label === "Payment Status" ? `<span class="status">${escapeHtml(value)}</span>` : escapeHtml(value)}</td></tr>`
+              )).join("")}
+            </table>
+            <div class="support">
+              <strong>Support Contact</strong><br />
+              ${supportDetails.email}<br />
+              ${supportDetails.phone}<br />
+              ${supportDetails.website}
+            </div>
+            <p class="footer">This is a computer-generated receipt and does not require a signature.</p>
+          </main>
         </body>
       </html>
     `;
@@ -177,6 +218,83 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
+  }
+
+  async function downloadReceiptPDF(row = receipt) {
+    if (!row?.receipt_number) {
+      setExportError("A receipt is only available for recorded payments.");
+      return;
+    }
+    setExportError("");
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    try {
+      const response = await fetch("/images/velttech-logo.png");
+      if (response.ok) {
+        const blob = await response.blob();
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        doc.addImage(dataUrl, "PNG", 18, 16, 36, 18);
+      }
+    } catch {
+      // The receipt still downloads if the logo cannot be embedded.
+    }
+
+    doc.setDrawColor(244, 195, 24);
+    doc.setLineWidth(1.4);
+    doc.line(18, 39, 192, 39);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text("Velttech Academy", 62, 24);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    doc.text("Official payment receipt", 62, 31);
+    doc.setTextColor(15, 23, 42);
+
+    const fields = [
+      ["Receipt Number", row.receipt_number],
+      ["Date Paid", formatDate(row.paid_at || row.payment_date)],
+      ["Student Name", row.student_name],
+      ["Parent Name", row.parent_name || "Not applicable"],
+      ["Programme", row.course_title],
+      ["Payment Period", paymentPeriod(row)],
+      ["Amount Paid", formatMoney(row.amount_paid)],
+      ["Payment Method", humanize(row.payment_method)],
+      ["Transaction Reference", row.reference || "Not provided"],
+      ["Payment Status", humanize(row.payment_status)],
+    ];
+
+    let y = 52;
+    fields.forEach(([label, value]) => {
+      doc.setFillColor(248, 250, 252);
+      doc.rect(18, y - 7, 58, 12, "F");
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(18, y - 7, 174, 12);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text(label, 22, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(String(value), 82, y, { maxWidth: 104 });
+      y += 12;
+    });
+
+    y += 12;
+    doc.setDrawColor(226, 232, 240);
+    doc.line(18, y, 192, y);
+    y += 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("Support Contact", 18, y);
+    doc.setFont("helvetica", "normal");
+    doc.text([supportDetails.email, supportDetails.phone, supportDetails.website], 18, y + 7);
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    doc.line(18, 276, 192, 276);
+    doc.text("This is a computer-generated receipt and does not require a signature.", 18, 284);
+    doc.save(`${row.receipt_number}.pdf`);
   }
 
   return (
@@ -235,8 +353,7 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
               <th className="px-4 py-3">{admin ? "Student" : "Child"}</th>
               {admin ? <th className="px-4 py-3">Parent</th> : null}
               <th className="px-4 py-3">Course</th>
-              <th className="px-4 py-3">Month</th>
-              <th className="px-4 py-3">Year</th>
+              <th className="px-4 py-3">Payment Period</th>
               <th className="px-4 py-3">Expected Fee</th>
               <th className="px-4 py-3">Amount Paid</th>
               <th className="px-4 py-3">Balance</th>
@@ -260,8 +377,7 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
                   </td>
                 ) : null}
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{row.course_title}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{monthNames[row.month]}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{row.year}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{paymentPeriod(row)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatMoney(row.expected_amount)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatMoney(row.amount_paid)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatMoney(row.balance)}</td>
@@ -318,7 +434,7 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
               <div className="flex items-center gap-4">
                 <Image src="/images/velttech-logo.png" alt="Velttech logo" width={160} height={56} className="h-14 w-auto" />
                 <div>
-                  <h2 className="text-2xl font-bold text-dark">Velttech Coding Academy</h2>
+                  <h2 className="text-2xl font-bold text-dark">Velttech Academy</h2>
                   <p className="text-sm text-slate-500">Official payment receipt</p>
                 </div>
               </div>
@@ -329,14 +445,15 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
             <dl className="mt-5 divide-y divide-slate-100 text-sm">
               {[
                 ["Receipt number", receipt.receipt_number],
-                [admin ? "Student name" : "Child name", receipt.student_name],
-                ["Parent name", receipt.parent_name || "Not provided"],
-                ["Course", receipt.course_title],
-                ["Amount", formatMoney(receipt.amount_paid)],
-                ["Payment date", formatDate(receipt.paid_at || receipt.payment_date)],
+                ["Date paid", formatDate(receipt.paid_at || receipt.payment_date)],
+                ["Student name", receipt.student_name],
+                ["Parent name", receipt.parent_name || "Not applicable"],
+                ["Programme", receipt.course_title],
+                ["Payment period", paymentPeriod(receipt)],
+                ["Amount paid", formatMoney(receipt.amount_paid)],
+                ["Payment method", humanize(receipt.payment_method)],
+                ["Transaction reference", receipt.reference || "Not provided"],
                 ["Payment status", humanize(receipt.payment_status)],
-                ["Paystack reference", receipt.reference || "Not provided"],
-                ["Printed date", formatDate(new Date(), { timeStyle: "short" })],
               ].map(([label, value]) => (
                 <div key={label} className="grid gap-2 py-3 sm:grid-cols-[180px_1fr]">
                   <dt className="font-bold text-slate-600">{label}</dt>
@@ -344,8 +461,21 @@ export default function PaymentHistoryTable({ rows, admin = false }) {
                 </div>
               ))}
             </dl>
+            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              <p className="font-bold text-dark">Support Contact</p>
+              <p>{supportDetails.email}</p>
+              <p>{supportDetails.phone}</p>
+              <p>{supportDetails.website}</p>
+            </div>
+            <p className="mt-4 border-t border-slate-200 pt-4 text-xs text-slate-500">
+              This is a computer-generated receipt and does not require a signature.
+            </p>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={() => setReceipt(null)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">Close</button>
+              <button type="button" onClick={() => downloadReceiptPDF()} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
+                <Download className="h-4 w-4" aria-hidden="true" />
+                PDF
+              </button>
               <button type="button" onClick={() => printReceipt()} className="inline-flex items-center gap-2 rounded-xl bg-dark px-4 py-2 text-sm font-bold text-white">
                 <Printer className="h-4 w-4" aria-hidden="true" />
                 Print
