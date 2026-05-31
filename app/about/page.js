@@ -11,13 +11,13 @@ const values = [
   {
     title: "Our Mission",
     description:
-      "To make practical technology skills and digital solutions accessible to learners, schools, businesses, and organizations.",
+      "To deliver practical, innovative, and scalable technology, data, educational technology, and professional development solutions that improve decision-making, enhance productivity, strengthen institutional performance, and create sustainable impact.",
     icon: Target,
   },
   {
     title: "Our Vision",
     description:
-      "To become a trusted technology partner helping Ghanaian communities and organizations learn, build, and grow with confidence.",
+      "To become a leading African technology and innovation company that empowers institutions, businesses, and individuals through digital transformation, data-driven solutions, educational technology, and capacity building.",
     icon: Telescope,
   },
   {
