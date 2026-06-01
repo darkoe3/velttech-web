@@ -4,6 +4,10 @@ import { Resend } from "resend";
 const CONTACT_RECIPIENT = "info@velttech.org";
 const CONTACT_SENDER = "Velttech <noreply@velttech.org>";
 const GENERIC_CONTACT_RESPONSE = "Thank you for contacting us.";
+const COMPANY_NAME = "Velttech";
+const COMPANY_WEBSITE_URL = "https://velttech.org";
+const COMPANY_SUPPORT_PHONE = "+233 55 510 6820";
+const COMPANY_LOGO_PATH = "/images/velttech-logo.png";
 const RATE_LIMIT_MAX = 3;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_WINDOW_SECONDS = RATE_LIMIT_WINDOW_MS / 1000;
@@ -18,6 +22,19 @@ function escapeHtml(value = "") {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function getBaseUrl(request) {
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL;
+
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/+$/, "");
+  }
+
+  const host = request.headers.get("host");
+  const protocol = request.headers.get("x-forwarded-proto") || "https";
+
+  return host ? `${protocol}://${host}` : COMPANY_WEBSITE_URL;
 }
 
 function genericSuccess() {
@@ -253,6 +270,124 @@ async function verifyTurnstile(token, ip) {
   return Boolean(result.success);
 }
 
+function formatSubmittedAt(date = new Date()) {
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Africa/Accra",
+  }).format(date);
+}
+
+function buildContactEmailHtml({
+  name,
+  email,
+  phone,
+  service,
+  message,
+  ip,
+  submittedAt,
+  logoUrl,
+}) {
+  const safeMessage = escapeHtml(message).replaceAll("\n", "<br />");
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>New Contact Form Submission</title>
+  </head>
+  <body style="margin:0;background:#f4f6f8;color:#172033;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f6f8;">
+      <tr>
+        <td align="center" style="padding:28px 16px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#ffffff;border:1px solid #e3e8ef;">
+            <tr>
+              <td style="padding:24px 28px;border-bottom:1px solid #e3e8ef;">
+                <img src="${escapeHtml(logoUrl)}" alt="${COMPANY_NAME}" width="150" style="display:block;max-width:150px;height:auto;border:0;">
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px;">
+                <p style="margin:0 0 8px;font-size:13px;line-height:20px;color:#64748b;">Website enquiry</p>
+                <h1 style="margin:0 0 20px;font-size:24px;line-height:32px;color:#111827;font-weight:700;">New contact form submission</h1>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;font-size:15px;line-height:22px;">
+                  <tr>
+                    <td style="width:150px;padding:10px 0;color:#64748b;vertical-align:top;">Name</td>
+                    <td style="padding:10px 0;color:#111827;vertical-align:top;">${escapeHtml(name)}</td>
+                  </tr>
+                  <tr>
+                    <td style="width:150px;padding:10px 0;color:#64748b;vertical-align:top;">Email</td>
+                    <td style="padding:10px 0;color:#111827;vertical-align:top;"><a href="mailto:${escapeHtml(email)}" style="color:#0f766e;text-decoration:none;">${escapeHtml(email)}</a></td>
+                  </tr>
+                  <tr>
+                    <td style="width:150px;padding:10px 0;color:#64748b;vertical-align:top;">Phone</td>
+                    <td style="padding:10px 0;color:#111827;vertical-align:top;">${escapeHtml(phone)}</td>
+                  </tr>
+                  <tr>
+                    <td style="width:150px;padding:10px 0;color:#64748b;vertical-align:top;">Service interest</td>
+                    <td style="padding:10px 0;color:#111827;vertical-align:top;">${escapeHtml(service)}</td>
+                  </tr>
+                  <tr>
+                    <td style="width:150px;padding:10px 0;color:#64748b;vertical-align:top;">Submitted</td>
+                    <td style="padding:10px 0;color:#111827;vertical-align:top;">${escapeHtml(submittedAt)} GMT</td>
+                  </tr>
+                  <tr>
+                    <td style="width:150px;padding:10px 0;color:#64748b;vertical-align:top;">Sender IP</td>
+                    <td style="padding:10px 0;color:#111827;vertical-align:top;">${escapeHtml(ip)}</td>
+                  </tr>
+                </table>
+
+                <div style="margin-top:24px;padding:18px 20px;background:#f8fafc;border:1px solid #e3e8ef;">
+                  <p style="margin:0 0 10px;font-size:13px;line-height:20px;color:#64748b;">Message</p>
+                  <p style="margin:0;font-size:15px;line-height:24px;color:#111827;">${safeMessage}</p>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:22px 28px;background:#111827;color:#d1d5db;font-size:13px;line-height:20px;">
+                <p style="margin:0 0 6px;color:#ffffff;font-weight:700;">${COMPANY_NAME}</p>
+                <p style="margin:0;">Website: <a href="${COMPANY_WEBSITE_URL}" style="color:#facc15;text-decoration:none;">${COMPANY_WEBSITE_URL}</a></p>
+                <p style="margin:0;">Email: <a href="mailto:${CONTACT_RECIPIENT}" style="color:#facc15;text-decoration:none;">${CONTACT_RECIPIENT}</a></p>
+                <p style="margin:0;">Support phone: ${COMPANY_SUPPORT_PHONE}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
+function buildContactEmailText({
+  name,
+  email,
+  phone,
+  service,
+  message,
+  ip,
+  submittedAt,
+}) {
+  return `New contact form submission
+
+Name: ${name}
+Email: ${email}
+Phone: ${phone}
+Service interest: ${service}
+Submitted: ${submittedAt} GMT
+Sender IP: ${ip}
+
+Message:
+${message}
+
+${COMPANY_NAME}
+Website: ${COMPANY_WEBSITE_URL}
+Email: ${CONTACT_RECIPIENT}
+Support phone: ${COMPANY_SUPPORT_PHONE}`;
+}
+
 export async function POST(request) {
   try {
     const payload = await request.json();
@@ -265,6 +400,8 @@ export async function POST(request) {
     const turnstileToken = normalizeValue(payload.turnstileToken || payload["cf-turnstile-response"]);
     const ip = getClientIp(request);
     const logDetails = { ip, email, service };
+    const submittedAt = formatSubmittedAt();
+    const logoUrl = `${getBaseUrl(request)}${COMPANY_LOGO_PATH}`;
 
     if (website) {
       logSuspiciousSubmission("honeypot triggered", logDetails);
@@ -327,17 +464,25 @@ export async function POST(request) {
       to: CONTACT_RECIPIENT,
       replyTo: email,
       subject: "New Contact Form Submission from Velttech Website",
-      html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <h2>New Contact Form Submission</h2>
-          <p><strong>Name:</strong> ${escapeHtml(name)}</p>
-          <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-          <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
-          <p><strong>Service Interest:</strong> ${escapeHtml(service)}</p>
-          <p><strong>Message:</strong></p>
-          <p>${escapeHtml(message).replaceAll("\n", "<br />")}</p>
-        </div>
-      `,
+      html: buildContactEmailHtml({
+        name,
+        email,
+        phone,
+        service,
+        message,
+        ip,
+        submittedAt,
+        logoUrl,
+      }),
+      text: buildContactEmailText({
+        name,
+        email,
+        phone,
+        service,
+        message,
+        ip,
+        submittedAt,
+      }),
     });
 
     if (error) {
