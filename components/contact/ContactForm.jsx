@@ -1,7 +1,10 @@
 "use client";
 
 import { Send } from "lucide-react";
-import { useState } from "react";
+import Script from "next/script";
+import { useEffect, useRef, useState } from "react";
+
+const turnstileSiteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
 
 const initialForm = {
   name: "",
@@ -9,12 +12,39 @@ const initialForm = {
   phone: "",
   service: "Coding for Kids",
   message: "",
+  website: "",
 };
 
 export default function ContactForm() {
   const [form, setForm] = useState(initialForm);
   const [status, setStatus] = useState("idle");
   const [feedback, setFeedback] = useState("");
+  const [turnstileReady, setTurnstileReady] = useState(false);
+  const turnstileContainerRef = useRef(null);
+  const turnstileWidgetIdRef = useRef(null);
+
+  useEffect(() => {
+    if (!turnstileSiteKey || !turnstileReady || !turnstileContainerRef.current || !window.turnstile) {
+      return;
+    }
+
+    if (turnstileWidgetIdRef.current !== null) {
+      return;
+    }
+
+    turnstileWidgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
+      sitekey: turnstileSiteKey,
+      callback(token) {
+        setForm((current) => ({ ...current, turnstileToken: token }));
+      },
+      "expired-callback"() {
+        setForm((current) => ({ ...current, turnstileToken: "" }));
+      },
+      "error-callback"() {
+        setForm((current) => ({ ...current, turnstileToken: "" }));
+      },
+    });
+  }, [turnstileReady]);
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -39,6 +69,9 @@ export default function ContactForm() {
       }
 
       setForm(initialForm);
+      if (turnstileWidgetIdRef.current !== null && window.turnstile) {
+        window.turnstile.reset(turnstileWidgetIdRef.current);
+      }
       setStatus("success");
       setFeedback("Thank you! Your message has been sent successfully.");
     } catch (error) {
@@ -52,7 +85,25 @@ export default function ContactForm() {
       className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-900/5 sm:p-8"
       onSubmit={handleSubmit}
     >
+      {turnstileSiteKey ? (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="afterInteractive"
+          onLoad={() => setTurnstileReady(true)}
+        />
+      ) : null}
       <h2 className="text-2xl font-black text-dark">Send an enquiry</h2>
+      <label className="hidden" aria-hidden="true" tabIndex={-1}>
+        <span>Website</span>
+        <input
+          name="website"
+          type="text"
+          value={form.website}
+          onChange={updateField}
+          autoComplete="off"
+          tabIndex={-1}
+        />
+      </label>
       <div className="mt-6 grid gap-5 md:grid-cols-2">
         <label className="block">
           <span className="text-sm font-bold text-slate-700">Name</span>
@@ -112,6 +163,12 @@ export default function ContactForm() {
             required
           />
         </label>
+        {turnstileSiteKey ? (
+          <div
+            className="min-h-[65px] md:col-span-2"
+            ref={turnstileContainerRef}
+          />
+        ) : null}
       </div>
 
       {feedback ? (
