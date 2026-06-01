@@ -11,13 +11,13 @@ const values = [
   {
     title: "Our Mission",
     description:
-      "To deliver practical, innovative, and scalable technology, data, educational technology, and professional development solutions that improve decision-making, enhance productivity, strengthen institutional performance, and create sustainable impact.",
+      "To deliver scalable technology and digital skills solutions, powered by data, that enable institutions and individuals to make informed decisions, enhance productivity, and drive sustainable impact.",
     icon: Target,
   },
   {
     title: "Our Vision",
     description:
-      "To become a leading African technology and innovation company that empowers institutions, businesses, and individuals through digital transformation, data-driven solutions, educational technology, and capacity building.",
+      "To be a leading African technology and data solutions company empowering organizations and individuals through innovation, digital transformation, and lifelong learning.",
     icon: Telescope,
   },
   {
