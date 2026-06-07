@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ClipboardCheck,
   CreditCard,
+  ExternalLink,
   GraduationCap,
   LayoutDashboard,
   MessageCircle,
@@ -100,9 +101,16 @@ export default function VeltSmartSchoolProduct() {
               href={launchUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-techBlue/55 bg-white px-5 text-sm font-black text-dark shadow-lg shadow-slate-950/20 transition hover:border-primary hover:bg-techBlue/25 focus:outline-none focus:ring-2 focus:ring-techBlue focus:ring-offset-2 focus:ring-offset-dark"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-black text-dark shadow-lg shadow-primary/25 transition hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-dark"
             >
               Launch App
+              <ExternalLink size={18} aria-hidden="true" />
+            </Link>
+            <Link
+              href="/veltsmartschoolapp"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-primary/45 bg-white/10 px-5 text-sm font-black text-white shadow-lg shadow-slate-950/20 transition hover:border-primary hover:bg-primary hover:text-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-dark"
+            >
+              Learn More
               <ArrowRight size={18} aria-hidden="true" />
             </Link>
           </div>
