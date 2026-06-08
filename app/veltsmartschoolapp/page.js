@@ -44,15 +44,60 @@ const demoUrl =
 const launchUrl = "https://veltsmartschoolapp.vercel.app";
 
 const features = [
-  { title: "Student & Teacher Management", icon: Users },
-  { title: "Attendance Tracking", icon: ClipboardCheck },
-  { title: "Fees & Payments", icon: CreditCard },
-  { title: "Results & Report Cards", icon: GraduationCap },
-  { title: "Lesson Plan Approval", icon: BookOpenCheck },
-  { title: "Parent Communication", icon: MessageCircle },
-  { title: "Safe Arrival Monitoring", icon: ShieldCheck },
-  { title: "School Dashboard & Reports", icon: BarChart3 },
-  { title: "Student Dropout Monitoring", icon: TrendingDown },
+  {
+    title: "Student & Teacher Management",
+    icon: Users,
+    copy:
+      "Manage student records, teacher profiles, class assignments, and school staff information from one secure dashboard.",
+  },
+  {
+    title: "Attendance Tracking",
+    icon: ClipboardCheck,
+    copy:
+      "Mark daily attendance, monitor absenteeism, lateness, and generate attendance records for students and classes.",
+  },
+  {
+    title: "Fees & Payments",
+    icon: CreditCard,
+    copy:
+      "Create fee categories, generate student bills, record payments, track balances, and issue payment alerts.",
+  },
+  {
+    title: "Results & Report Cards",
+    icon: GraduationCap,
+    copy:
+      "Enter assessments, calculate subject results, generate terminal reports, and download professional report cards.",
+  },
+  {
+    title: "Lesson Plan Approval",
+    icon: BookOpenCheck,
+    copy:
+      "Teachers prepare lesson plans using a Ghana NaCCA/GES-style format and submit them for headteacher review and approval.",
+  },
+  {
+    title: "Parent Communication",
+    icon: MessageCircle,
+    copy:
+      "Send announcements, attendance updates, payment alerts, and important school notices to parents through communication logs.",
+  },
+  {
+    title: "Safe Arrival Monitoring",
+    icon: ShieldCheck,
+    copy:
+      "Support check-in and check-out tracking with QR/GPS-based safe arrival records for private schools.",
+  },
+  {
+    title: "School Dashboard & Reports",
+    icon: BarChart3,
+    copy:
+      "Give school leaders real-time summaries of students, teachers, attendance, payments, lesson plans, and academic performance.",
+  },
+  {
+    title: "Student Dropout Monitoring",
+    icon: TrendingDown,
+    copy:
+      "Track student status, identify inactive learners, and support early intervention for dropout risk monitoring.",
+  },
 ];
 
 const benefits = [
@@ -289,7 +334,7 @@ export default function VeltSmartSchoolAppPage() {
                     <div>
                       <h3 className="text-lg font-black text-dark">{feature.title}</h3>
                       <p className="mt-2 text-sm leading-6 text-slate-600">
-                        Built into the same dashboard so administrators and staff can work with clear, connected records.
+                        {feature.copy}
                       </p>
                     </div>
                   </article>
