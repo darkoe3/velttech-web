@@ -71,6 +71,31 @@ function paymentPeriod(payment) {
   return "";
 }
 
+function statusLabel(value) {
+  return value ? value.replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase()) : "Not provided";
+}
+
+function statusPillClass(value) {
+  const styles = {
+    active: "bg-emerald-100 text-emerald-700",
+    paid: "bg-emerald-100 text-emerald-700",
+    submitted: "bg-blue-100 text-blue-700",
+    graded: "bg-emerald-100 text-emerald-700",
+    pending: "bg-amber-100 text-amber-700",
+    absent: "bg-rose-100 text-rose-700",
+  };
+  return styles[value] || "bg-slate-100 text-slate-700";
+}
+
+function submissionTypeLabel(value) {
+  const labels = {
+    text: "Text answer",
+    file_upload: "File upload",
+    both: "Text + File upload",
+  };
+  return labels[value] || "Text answer";
+}
+
 function QuickActions({ role }) {
   const actions = quickActions[role] || quickActions.student;
 
@@ -126,171 +151,264 @@ function StudentDashboard({ dashboard }) {
   const notifications = dashboard.notifications || [];
   const attendanceSummary = dashboard.attendance_summary || {};
   const assignmentSummary = dashboard.assignment_summary || {};
+  const assignments = dashboard.assignments || [];
   const paymentSummary = dashboard.payment_summary || {};
   const recentPayments = dashboard.recent_payments || [];
-  const recentAttendance = dashboard.recent_attendance || [];
-  const latestProgress = dashboard.latest_progress_report;
+  const currentProgramme = dashboard.current_programme || {};
+  const progressTracker = dashboard.progress_tracker || {};
+  const profile = dashboard.profile || {};
   const selectedProgramme = dashboard.selected_programme || courses[0]?.title || "Pending assignment";
   const enrollmentStatus = dashboard.enrollment_status || "pending";
+  const currentPeriod = paymentSummary.current_payment_period || currentPeriodLabel();
+  const outstandingMonthlyPayment = Number(paymentSummary.outstanding_monthly_payment ?? paymentSummary.outstanding_amount ?? 0);
+  const currentAmountPaid = Number(paymentSummary.current_amount_paid ?? paymentSummary.completed_amount ?? 0);
+  const progressPercentage = Math.min(Number(progressTracker.progress_percentage || 0), 100);
+  const learningResources = [
+    {
+      title: "Student Learning Guide",
+      detail: "Orientation notes for Velttech Academy learners.",
+      href: "/resources/velttech-academy-student-guide.txt",
+    },
+    {
+      title: "Programme Progress Checklist",
+      detail: "A simple checklist for tracking modules and class preparation.",
+      href: "/resources/velttech-academy-progress-checklist.txt",
+    },
+  ];
 
   return (
     <>
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard label="My Programme" value={selectedProgramme} detail={enrollmentStatus} />
-        <SummaryCard label="My Courses" value={courses.length} />
-        <SummaryCard label="Assignments" value={assignmentSummary.total || 0} />
+        <SummaryCard label="My Programme" value={selectedProgramme} detail={statusLabel(enrollmentStatus)} />
+        <SummaryCard
+          label="Payment Status"
+          value={outstandingMonthlyPayment > 0 ? "Pending" : "Settled"}
+          detail={outstandingMonthlyPayment > 0 ? formatMoney(outstandingMonthlyPayment) : currentPeriod}
+        />
+        <SummaryCard
+          label="Assignments"
+          value={assignmentSummary.total || 0}
+          detail={`${assignmentSummary.pending || 0} pending`}
+        />
         <SummaryCard
           label="Attendance"
-          value={`${attendanceSummary.present || 0}/${attendanceSummary.total || 0}`}
-          detail="Present records"
+          value={`${attendanceSummary.percentage || 0}%`}
+          detail={`${attendanceSummary.classes_attended || 0}/${attendanceSummary.total || 0} classes attended`}
         />
       </div>
 
-      <div className="mt-8 grid gap-6 xl:grid-cols-[1.3fr_1fr]">
+      <div className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <section>
-          <SectionHeading title="My Programme" description="Your current enrollment and course information." />
-          <AcademyCard className="mb-4">
+          <SectionHeading title="Current Programme" description="Your active learning plan and class assignment." />
+          <AcademyCard>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-bold text-dark">{selectedProgramme}</h3>
-                <p className="mt-2 text-sm text-slate-600">Enrollment status: {enrollmentStatus}</p>
+                <h3 className="text-2xl font-bold text-dark">{currentProgramme.name || selectedProgramme}</h3>
+                <p className="mt-2 text-sm font-semibold text-slate-500">
+                  Instructor: {currentProgramme.instructor || "Awaiting assignment"}
+                </p>
               </div>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
-                Student
+              <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusPillClass(enrollmentStatus)}`}>
+                {statusLabel(enrollmentStatus)}
               </span>
             </div>
+            <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-3">
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <dt className="font-semibold text-slate-500">Start Date</dt>
+                <dd className="mt-1 font-bold text-dark">{formatDate(currentProgramme.start_date)}</dd>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <dt className="font-semibold text-slate-500">End Date</dt>
+                <dd className="mt-1 font-bold text-dark">{formatDate(currentProgramme.end_date)}</dd>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <dt className="font-semibold text-slate-500">Programme Name</dt>
+                <dd className="mt-1 font-bold text-dark">{currentProgramme.name || selectedProgramme}</dd>
+              </div>
+            </dl>
           </AcademyCard>
-          <SectionHeading title="My Courses" description="Your current enrolled courses." />
-          {courses.length === 0 ? (
-            <EmptyState>You are not enrolled in any courses yet.</EmptyState>
+        </section>
+
+        <section>
+          <SectionHeading title="Progress Tracker" actionHref="/my-progress" actionLabel="View report ->" />
+          <AcademyCard>
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-slate-500">Overall progress</p>
+                <p className="mt-2 text-4xl font-bold text-dark">{progressPercentage}%</p>
+              </div>
+              <div className="text-right text-sm text-slate-600">
+                <p><span className="font-bold text-dark">{progressTracker.modules_completed || 0}</span> modules completed</p>
+                <p><span className="font-bold text-dark">{progressTracker.modules_remaining || 0}</span> modules remaining</p>
+              </div>
+            </div>
+            <div className="mt-6 h-3 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${progressPercentage}%` }} />
+            </div>
+          </AcademyCard>
+        </section>
+      </div>
+
+      <div className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <section>
+          <SectionHeading title="Assignments" actionHref="/assignments" actionLabel="View all ->" />
+          {assignments.length === 0 ? (
+            <EmptyState>No assignments available yet.</EmptyState>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {courses.map((course) => (
-                <AcademyCard key={course.id}>
-                  <h3 className="text-lg font-bold text-dark">{course.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">{course.description}</p>
-                  <p className="mt-4 text-sm font-semibold text-slate-500">
-                    Progress placeholder
-                  </p>
+            <div className="space-y-4">
+              {assignments.map((assignment) => (
+                <AcademyCard key={assignment.id}>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-bold text-dark">{assignment.title}</h3>
+                      <p className="mt-1 text-sm text-slate-600">{assignment.course_title}</p>
+                      <p className="mt-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+                        {submissionTypeLabel(assignment.submission_type)}
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusPillClass(assignment.status)}`}>
+                      {statusLabel(assignment.status)}
+                    </span>
+                  </div>
+                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-slate-500">Due {formatDate(assignment.due_date)}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Link href="/assignments" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
+                        View Assignment
+                      </Link>
+                      <Link href={`/assignments#assignment-${assignment.id}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-dark px-4 py-2 text-sm font-bold text-white">
+                        Submit Assignment
+                      </Link>
+                    </div>
+                  </div>
                 </AcademyCard>
               ))}
             </div>
           )}
         </section>
 
-        <div className="space-y-6">
-          <section>
-            <SectionHeading title="Payment Status" />
-            <AcademyCard>
-              <p className="mb-4 text-2xl font-bold text-dark">
-                Pending payment: {formatMoney(paymentSummary.outstanding_amount)}
-              </p>
-              <DashboardPaymentStatusActions
-                outstandingAmount={paymentSummary.outstanding_amount}
-                pendingPaymentIds={paymentSummary.pending_payment_ids || []}
-              />
-            </AcademyCard>
-          </section>
-          <section>
-            <SectionHeading title="Assignments" />
-            <AcademyCard>
-              <dl className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <dt className="font-semibold text-slate-500">Available</dt>
-                  <dd className="mt-1 font-bold text-dark">{assignmentSummary.total || 0}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-slate-500">Submitted</dt>
-                  <dd className="mt-1 font-bold text-dark">{assignmentSummary.submitted || 0}</dd>
-                </div>
-              </dl>
-              <Link href="/assignments" className="mt-5 inline-flex rounded-xl bg-dark px-4 py-2 text-sm font-bold text-white">
-                View Assignments
-              </Link>
-            </AcademyCard>
-          </section>
-          <section>
-            <SectionHeading title="Notifications" />
-            <AcademyCard>
-              <p className="text-3xl font-bold text-dark">{notifications.length}</p>
-              <p className="mt-2 text-sm text-slate-600">Recent academy updates</p>
-              <Link href="/notifications" className="mt-5 inline-flex rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
-                View Notifications
-              </Link>
-            </AcademyCard>
-          </section>
-        </div>
+        <section>
+          <SectionHeading title="Attendance" actionHref="/my-attendance" actionLabel="View records ->" />
+          <AcademyCard>
+            <dl className="grid gap-4 text-sm sm:grid-cols-3 xl:grid-cols-1">
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <dt className="font-semibold text-slate-500">Total Classes</dt>
+                <dd className="mt-1 text-2xl font-bold text-dark">{attendanceSummary.total || 0}</dd>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <dt className="font-semibold text-slate-500">Classes Attended</dt>
+                <dd className="mt-1 text-2xl font-bold text-dark">{attendanceSummary.classes_attended || 0}</dd>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <dt className="font-semibold text-slate-500">Attendance Percentage</dt>
+                <dd className="mt-1 text-2xl font-bold text-dark">{attendanceSummary.percentage || 0}%</dd>
+              </div>
+            </dl>
+          </AcademyCard>
+        </section>
       </div>
 
-      <div className="mt-8">
-        <NotificationsPreview notifications={notifications} />
+      <div className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <section>
+          <SectionHeading title="Payments" />
+          <AcademyCard>
+            <DashboardPaymentStatusActions
+              outstandingAmount={outstandingMonthlyPayment}
+              pendingPaymentIds={paymentSummary.pending_payment_ids || []}
+              currentPeriod={currentPeriod}
+              amountPaid={currentAmountPaid}
+            />
+          </AcademyCard>
+        </section>
+
+        <section>
+          <SectionHeading title="Profile" />
+          <AcademyCard>
+            <dl className="space-y-4 text-sm">
+              <div>
+                <dt className="font-semibold text-slate-500">Name</dt>
+                <dd className="mt-1 font-bold text-dark">{profile.name || "Not provided"}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-500">Email</dt>
+                <dd className="mt-1 break-words text-slate-800">{profile.email || "Not provided"}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-500">Phone</dt>
+                <dd className="mt-1 text-slate-800">{profile.phone || "Not provided"}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-500">Programme</dt>
+                <dd className="mt-1 font-bold text-dark">{profile.programme || selectedProgramme}</dd>
+              </div>
+            </dl>
+          </AcademyCard>
+        </section>
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
         <section>
-          <SectionHeading title="My Attendance Summary" actionHref="/my-attendance" actionLabel="View all ->" />
-          <AcademyCard>
-            <dl className="grid grid-cols-2 gap-4 text-sm">
-              <div><dt className="font-semibold text-slate-500">Present</dt><dd className="mt-1 font-bold text-dark">{attendanceSummary.present || 0}</dd></div>
-              <div><dt className="font-semibold text-slate-500">Absent</dt><dd className="mt-1 font-bold text-dark">{attendanceSummary.absent || 0}</dd></div>
-              <div><dt className="font-semibold text-slate-500">Late</dt><dd className="mt-1 font-bold text-dark">{attendanceSummary.late || 0}</dd></div>
-              <div><dt className="font-semibold text-slate-500">Excused</dt><dd className="mt-1 font-bold text-dark">{attendanceSummary.excused || 0}</dd></div>
-            </dl>
-          </AcademyCard>
-          {recentAttendance.length ? (
-            <div className="mt-4 space-y-3">
-              {recentAttendance.map((record) => (
-                <AcademyCard key={record.id}>
-                  <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-                    <span className="font-bold text-dark">{record.course_title}</span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
-                      {record.status}
+          <SectionHeading title="Notifications" actionHref="/notifications" actionLabel="View all ->" />
+          {notifications.length === 0 ? (
+            <EmptyState>No notifications yet.</EmptyState>
+          ) : (
+            <div className="space-y-4">
+              {notifications.map((notification) => (
+                <AcademyCard key={notification.id}>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <h3 className="font-bold text-dark">{notification.title}</h3>
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      {formatDate(notification.created_at)}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm text-slate-500">{formatDate(record.date)}</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{notification.message}</p>
                 </AcademyCard>
               ))}
             </div>
-          ) : null}
-        </section>
-        <section>
-          <SectionHeading title="My Progress Report" />
-          {latestProgress ? (
-            <AcademyCard>
-              <h3 className="font-bold text-dark">{latestProgress.course_title}</h3>
-              <p className="mt-3 text-3xl font-bold text-dark">{latestProgress.progress_score}%</p>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                {latestProgress.instructor_comment || "No instructor comment yet."}
-              </p>
-            </AcademyCard>
-          ) : (
-            <EmptyState>No progress report has been added yet.</EmptyState>
           )}
+        </section>
+
+        <section>
+          <SectionHeading title="Resources" />
+          <div className="space-y-4">
+            {learningResources.map((resource) => (
+              <AcademyCard key={resource.title}>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-bold text-dark">{resource.title}</h3>
+                    <p className="mt-1 text-sm text-slate-600">{resource.detail}</p>
+                  </div>
+                  <Link href={resource.href} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
+                    Download
+                  </Link>
+                </div>
+              </AcademyCard>
+            ))}
+          </div>
         </section>
       </div>
 
-      <section className="mt-8">
-        <SectionHeading title="Recent Payments" actionHref="/payments" actionLabel="View all ->" />
-        {recentPayments.length === 0 ? (
-          <EmptyState>No payments recorded yet.</EmptyState>
-        ) : (
+      {recentPayments.length ? (
+        <section className="mt-8">
+          <SectionHeading title="Recent Payments" actionHref="/payments" actionLabel="View all ->" />
           <div className="grid gap-4 md:grid-cols-2">
             {recentPayments.map((payment) => (
               <AcademyCard key={payment.id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-bold text-dark">{payment.course_title}</h3>
-                    <p className="mt-1 text-sm text-slate-600">{formatMoney(payment.amount)}</p>
+                    <h3 className="font-bold text-dark">{paymentPeriod(payment) || currentPeriod}</h3>
+                    <p className="mt-1 text-sm text-slate-600">{payment.course_title}</p>
                   </div>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
-                    {payment.status}
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusPillClass(payment.status)}`}>
+                    {statusLabel(payment.status)}
                   </span>
                 </div>
+                <p className="mt-4 text-lg font-bold text-dark">{formatMoney(payment.amount)}</p>
               </AcademyCard>
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      ) : null}
     </>
   );
 }

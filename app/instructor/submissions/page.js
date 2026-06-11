@@ -7,6 +7,13 @@ const statusStyles = {
   pending: "bg-slate-100 text-slate-700",
   submitted: "bg-blue-100 text-blue-700",
   graded: "bg-emerald-100 text-emerald-700",
+  returned: "bg-amber-100 text-amber-700",
+};
+
+const submissionTypeLabels = {
+  text: "Text answer",
+  file_upload: "File upload",
+  both: "Text + File upload",
 };
 
 export default async function InstructorSubmissionsPage() {
@@ -20,7 +27,7 @@ export default async function InstructorSubmissionsPage() {
     }
     return (
       <section className="mx-auto max-w-7xl px-5 py-10">
-        <SectionHeading title="Assignment Submissions" description="Review and grade work submitted for your assignments." />
+        <SectionHeading title="Assignment Submissions" description="Review text answers, download uploaded files, grade work, and add feedback." />
         {submissions.length === 0 ? (
           <EmptyState>No submissions yet.</EmptyState>
         ) : (
@@ -30,19 +37,73 @@ export default async function InstructorSubmissionsPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="font-bold text-dark">{submission.assignment_title}</h2>
-                    <p className="mt-1 text-sm text-slate-600">{submission.student_name} · {submission.course_title}</p>
+                    <p className="mt-1 text-sm text-slate-600">{submission.student_name} - {submission.course_title}</p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusStyles[submission.status]}`}>
-                    {humanize(submission.status)}
-                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusStyles[submission.status]}`}>
+                      {humanize(submission.status)}
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-700">
+                      {submissionTypeLabels[submission.assignment_submission_type] || "Text answer"}
+                    </span>
+                  </div>
                 </div>
-                <p className="mt-4 text-sm leading-6 text-slate-600">
-                  {submission.submission_text || "No submission text yet."}
-                </p>
-                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Submitted {formatDate(submission.submitted_at)}
-                </p>
-                <GradeForm submission={submission} />
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <a href={`#submission-${submission.id}`} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
+                    View Submission
+                  </a>
+                  <a href={`#grade-${submission.id}`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-dark px-4 py-2 text-sm font-bold text-white">
+                    Grade Submission
+                  </a>
+                </div>
+
+                <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                  <div className="rounded-xl bg-slate-50 px-4 py-3">
+                    <dt className="font-semibold text-slate-500">Due date</dt>
+                    <dd className="mt-1 font-bold text-dark">{formatDate(submission.assignment_due_date)}</dd>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 px-4 py-3">
+                    <dt className="font-semibold text-slate-500">Submitted date</dt>
+                    <dd className="mt-1 font-bold text-dark">{formatDate(submission.submitted_at)}</dd>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 px-4 py-3">
+                    <dt className="font-semibold text-slate-500">Grade</dt>
+                    <dd className="mt-1 font-bold text-dark">{submission.grade ?? submission.score ?? "Not graded"} / {submission.max_score || submission.assignment_marks || 100}</dd>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 px-4 py-3">
+                    <dt className="font-semibold text-slate-500">Graded date</dt>
+                    <dd className="mt-1 font-bold text-dark">{formatDate(submission.graded_at)}</dd>
+                  </div>
+                </dl>
+
+                <div id={`submission-${submission.id}`} className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
+                  <p className="font-semibold text-dark">Assignment instructions</p>
+                  <p className="mt-2 whitespace-pre-wrap">{submission.assignment_description || "No instructions provided."}</p>
+                </div>
+
+                <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
+                  <p className="font-semibold text-dark">Text answer</p>
+                  <p className="mt-2 whitespace-pre-wrap">{submission.text_answer || submission.submission_text || "No text answer submitted."}</p>
+                </div>
+
+                {submission.uploaded_file_name ? (
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm">
+                    <div>
+                      <p className="font-semibold text-dark">Uploaded file</p>
+                      <p className="mt-1 text-slate-600">{submission.uploaded_file_name}</p>
+                    </div>
+                    <a
+                      href={`/api/instructor/submissions/${submission.id}/file`}
+                      className="inline-flex min-h-11 items-center justify-center rounded-xl bg-dark px-4 py-2 text-sm font-bold text-white"
+                    >
+                      Download
+                    </a>
+                  </div>
+                ) : null}
+
+                <div id={`grade-${submission.id}`}>
+                  <GradeForm submission={submission} />
+                </div>
               </AcademyCard>
             ))}
           </div>
