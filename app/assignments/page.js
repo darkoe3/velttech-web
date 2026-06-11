@@ -1,4 +1,4 @@
-import { AssignmentForm, SubmissionForm } from "@/components/assignments/AssignmentForms";
+import { AssignmentForm, InstructorAssignmentActions, SubmissionForm } from "@/components/assignments/AssignmentForms";
 import { AcademyCard, EmptyState, ErrorState, SectionHeading, formatDate, humanize } from "@/components/ui/academy";
 import { djangoApiFetch, getCurrentUser } from "@/lib/django-api";
 
@@ -7,13 +7,19 @@ const statusStyles = {
   submitted: "bg-blue-100 text-blue-700",
   graded: "bg-emerald-100 text-emerald-700",
   returned: "bg-amber-100 text-amber-700",
+  overdue: "bg-rose-100 text-rose-700",
 };
 
 const submissionTypeLabels = {
-  text: "Text answer",
-  file_upload: "File upload",
-  both: "Text + File upload",
+  quiz: "Quiz assessment",
+  practical: "Practical assessment",
 };
+
+function assignmentStatus(assignment, submission) {
+  if (submission?.status) return submission.status;
+  const dueDate = assignment.due_date ? new Date(`${assignment.due_date}T23:59:59`) : null;
+  return dueDate && dueDate < new Date() ? "overdue" : "pending";
+}
 
 export default async function AssignmentsPage() {
   try {
@@ -26,10 +32,10 @@ export default async function AssignmentsPage() {
     ]);
     return (
       <section className="mx-auto max-w-7xl px-5 py-10">
-        <SectionHeading title="Assignments" description="Course work and submission status in one place." />
+        <SectionHeading title="Assessments" description="Quizzes, practical assessments, scores, and feedback in one place." />
         {user.role === "admin" ? (
           <AcademyCard className="mb-8">
-            <SectionHeading title="Create Assignment" description="Publish work for a course group or a selected student." />
+            <SectionHeading title="Create Assessment" description="Publish a quiz or practical assessment for a group or selected learner." />
             <AssignmentForm
               courses={courses}
               enrollments={enrollments}
@@ -39,11 +45,12 @@ export default async function AssignmentsPage() {
           </AcademyCard>
         ) : null}
         {assignments.length === 0 ? (
-          <EmptyState>No assignments available yet.</EmptyState>
+          <EmptyState>No assessments available yet.</EmptyState>
         ) : (
           <div className="grid gap-5 lg:grid-cols-2">
             {assignments.map((assignment) => {
               const submission = assignment.submission;
+              const currentStatus = assignmentStatus(assignment, submission);
               return (
                 <AcademyCard key={assignment.id}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -53,7 +60,7 @@ export default async function AssignmentsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-700">
-                        {submissionTypeLabels[assignment.submission_type] || "Text answer"}
+                        {submissionTypeLabels[assignment.submission_type] || "Quiz assessment"}
                       </span>
                       <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-700">
                         Due {formatDate(assignment.due_date)}
@@ -70,7 +77,7 @@ export default async function AssignmentsPage() {
                     </div>
                     <div className="rounded-xl bg-slate-50 px-4 py-3">
                       <dt className="font-semibold text-slate-500">Submission type</dt>
-                      <dd className="mt-1 font-bold text-dark">{submissionTypeLabels[assignment.submission_type] || "Text answer"}</dd>
+                      <dd className="mt-1 font-bold text-dark">{submissionTypeLabels[assignment.submission_type] || "Quiz assessment"}</dd>
                     </div>
                     <div className="rounded-xl bg-slate-50 px-4 py-3">
                       <dt className="font-semibold text-slate-500">Marks</dt>
@@ -81,11 +88,11 @@ export default async function AssignmentsPage() {
                   {user.role === "student" ? (
                     <>
                       <div className="mt-4 flex flex-wrap gap-3">
-                        <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusStyles[submission?.status || "pending"]}`}>
-                          {humanize(submission?.status || "pending")}
+                        <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusStyles[currentStatus]}`}>
+                          {humanize(currentStatus)}
                         </span>
                         <a href={`#assignment-${assignment.id}`} className="rounded-xl border border-slate-300 px-3 py-1 text-xs font-bold text-dark">
-                          View Assignment
+                          View Assessment
                         </a>
                       </div>
                       {submission?.status === "graded" ? (
@@ -112,6 +119,16 @@ export default async function AssignmentsPage() {
                     </>
                   ) : null}
 
+                  {user.role === "admin" ? (
+                    <InstructorAssignmentActions
+                      assignment={assignment}
+                      courses={courses}
+                      enrollments={enrollments}
+                      instructors={dashboard.instructors || []}
+                      allowInstructorSelect
+                    />
+                  ) : null}
+
                   {user.role === "parent" ? (
                     <div className="mt-5 space-y-3">
                       {assignment.submissions.length === 0 ? (
@@ -131,12 +148,7 @@ export default async function AssignmentsPage() {
                             {item.status === "submitted" ? <p className="mt-3 font-semibold text-blue-700">Awaiting grading</p> : null}
                             {item.status === "returned" ? <p className="mt-3 text-amber-800">Returned: {item.feedback || "Please review and resubmit."}</p> : null}
                             <p className="mt-2 text-slate-500">Submitted {formatDate(item.submitted_at)} - Graded {formatDate(item.graded_at)}</p>
-                            {item.uploaded_file_name ? (
-                              <p className="mt-2 text-slate-600">
-                                File: <a href={`/api/my-assignments/submissions/${item.id}/file`} className="font-bold text-secondary">{item.uploaded_file_name}</a>
-                              </p>
-                            ) : null}
-                            {(item.text_answer || item.submission_text) ? <p className="mt-2 text-slate-600">{item.text_answer || item.submission_text}</p> : null}
+                            {item.quiz_answers ? <p className="mt-2 text-slate-600">Quiz answers recorded.</p> : null}
                           </div>
                         ))
                       )}

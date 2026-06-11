@@ -34,7 +34,7 @@ const quickActions = {
   ],
   student: [
     { title: "My Courses", description: "Open your enrolled courses.", href: "/my-courses" },
-    { title: "Assignments", description: "Review and submit your class assignments.", href: "/assignments" },
+    { title: "Assessments", description: "Take quizzes and review practical grades.", href: "/assignments" },
     { title: "Attendance", description: "Track your class attendance records.", href: "/my-attendance" },
     { title: "Progress", description: "Read instructor feedback and progress updates.", href: "/my-progress" },
     { title: "Certificates", description: "Download completed programme certificates.", href: "/my-certificates" },
@@ -45,7 +45,7 @@ const quickActions = {
     { title: "Attendance", description: "Record class attendance.", href: "/instructor/attendance" },
     { title: "Lesson Notes", description: "Document what was covered in class.", href: "/instructor/lesson-notes" },
     { title: "Progress Reports", description: "Update student progress.", href: "/instructor/progress" },
-    { title: "Certificates", description: "Issue certificates for completed learners.", href: "/instructor/certificates" },
+    { title: "Assessments", description: "Create quizzes and grade practical work.", href: "/instructor/assignments" },
   ],
 };
 
@@ -94,11 +94,10 @@ function statusPillClass(value) {
 
 function submissionTypeLabel(value) {
   const labels = {
-    text: "Text answer",
-    file_upload: "File upload",
-    both: "Text + File upload",
+    quiz: "Quiz assessment",
+    practical: "Practical assessment",
   };
-  return labels[value] || "Text answer";
+  return labels[value] || "Quiz assessment";
 }
 
 function QuickActions({ role }) {
@@ -191,7 +190,7 @@ function StudentDashboard({ dashboard }) {
           detail={outstandingMonthlyPayment > 0 ? formatMoney(outstandingMonthlyPayment) : currentPeriod}
         />
         <SummaryCard
-          label="Assignments"
+          label="Assessments"
           value={assignmentSummary.total || 0}
           detail={`${assignmentSummary.pending || 0} pending`}
         />
@@ -256,9 +255,9 @@ function StudentDashboard({ dashboard }) {
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <section>
-          <SectionHeading title="Assignments" actionHref="/assignments" actionLabel="View all ->" />
+          <SectionHeading title="Assessments" actionHref="/assignments" actionLabel="View all ->" />
           {assignments.length === 0 ? (
-            <EmptyState>No assignments available yet.</EmptyState>
+            <EmptyState>No assessments available yet.</EmptyState>
           ) : (
             <div className="space-y-4">
               {assignments.map((assignment) => (
@@ -279,10 +278,10 @@ function StudentDashboard({ dashboard }) {
                     <p className="text-sm font-semibold text-slate-500">Due {formatDate(assignment.due_date)}</p>
                     <div className="flex flex-wrap gap-2">
                       <Link href="/assignments" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
-                        View Assignment
+                        View Assessment
                       </Link>
                       <Link href={`/assignments#assignment-${assignment.id}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-dark px-4 py-2 text-sm font-bold text-white">
-                        Submit Assignment
+                        Start Quiz
                       </Link>
                     </div>
                   </div>

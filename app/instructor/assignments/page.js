@@ -1,12 +1,11 @@
-import { AssignmentForm } from "@/components/assignments/AssignmentForms";
+import { AssignmentForm, InstructorAssignmentActions, PracticalGradeForm } from "@/components/assignments/AssignmentForms";
 import { AcademyCard, EmptyState, ErrorState, SectionHeading, formatDate, humanize } from "@/components/ui/academy";
 import { fetchInternalJson } from "@/lib/instructor-page-fetch";
 import { requireInstructor } from "@/lib/instructor";
 
 const submissionTypeLabels = {
-  text: "Text answer",
-  file_upload: "File upload",
-  both: "Text + File upload",
+  quiz: "Quiz assessment",
+  practical: "Practical assessment",
 };
 
 export default async function InstructorAssignmentsPage() {
@@ -24,13 +23,13 @@ export default async function InstructorAssignmentsPage() {
       <section className="mx-auto max-w-7xl px-5 py-10">
         <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
           <AcademyCard>
-            <SectionHeading title="Create Assignment" description="Publish work for a whole course group or one selected learner." />
+            <SectionHeading title="Create Assessment" description="Publish a quiz or practical assessment for a course group or selected learner." />
             <AssignmentForm courses={courses} enrollments={enrollments} />
           </AcademyCard>
           <section>
-            <SectionHeading title="Assignments" />
+            <SectionHeading title="Assessments" />
             {assignments.length === 0 ? (
-              <EmptyState>No assignments yet.</EmptyState>
+              <EmptyState>No assessments yet.</EmptyState>
             ) : (
               <div className="space-y-4">
                 {assignments.map((assignment) => (
@@ -42,7 +41,7 @@ export default async function InstructorAssignmentsPage() {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-700">
-                          {submissionTypeLabels[assignment.submission_type] || "Text answer"}
+                          {submissionTypeLabels[assignment.submission_type] || "Quiz assessment"}
                         </span>
                         <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-700">
                           Due {formatDate(assignment.due_date)}
@@ -64,6 +63,12 @@ export default async function InstructorAssignmentsPage() {
                         <dd className="mt-1 font-bold text-dark">{assignment.marks ?? "Not set"}</dd>
                       </div>
                     </dl>
+                    <InstructorAssignmentActions
+                      assignment={assignment}
+                      courses={courses}
+                      enrollments={enrollments}
+                    />
+                    <PracticalGradeForm assignment={assignment} enrollments={enrollments} />
                   </AcademyCard>
                 ))}
               </div>

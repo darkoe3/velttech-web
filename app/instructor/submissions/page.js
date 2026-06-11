@@ -11,9 +11,8 @@ const statusStyles = {
 };
 
 const submissionTypeLabels = {
-  text: "Text answer",
-  file_upload: "File upload",
-  both: "Text + File upload",
+  quiz: "Quiz assessment",
+  practical: "Practical assessment",
 };
 
 export default async function InstructorSubmissionsPage() {
@@ -27,9 +26,9 @@ export default async function InstructorSubmissionsPage() {
     }
     return (
       <section className="mx-auto max-w-7xl px-5 py-10">
-        <SectionHeading title="Assignment Submissions" description="Review text answers, download uploaded files, grade work, and add feedback." />
+        <SectionHeading title="Assessment Results" description="Review quiz results and practical assessment feedback." />
         {submissions.length === 0 ? (
-          <EmptyState>No submissions yet.</EmptyState>
+          <EmptyState>No assessment results yet.</EmptyState>
         ) : (
           <div className="grid gap-5 lg:grid-cols-2">
             {submissions.map((submission) => (
@@ -44,16 +43,16 @@ export default async function InstructorSubmissionsPage() {
                       {humanize(submission.status)}
                     </span>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-700">
-                      {submissionTypeLabels[submission.assignment_submission_type] || "Text answer"}
+                      {submissionTypeLabels[submission.assignment_submission_type] || "Quiz assessment"}
                     </span>
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <a href={`#submission-${submission.id}`} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
-                    View Submission
+                    View Result
                   </a>
                   <a href={`#grade-${submission.id}`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-dark px-4 py-2 text-sm font-bold text-white">
-                    Grade Submission
+                    Grade Result
                   </a>
                 </div>
 
@@ -82,24 +81,9 @@ export default async function InstructorSubmissionsPage() {
                 </div>
 
                 <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
-                  <p className="font-semibold text-dark">Text answer</p>
-                  <p className="mt-2 whitespace-pre-wrap">{submission.text_answer || submission.submission_text || "No text answer submitted."}</p>
+                  <p className="font-semibold text-dark">Quiz answers</p>
+                  <p className="mt-2 whitespace-pre-wrap">{submission.quiz_answers ? JSON.stringify(submission.quiz_answers, null, 2) : "No quiz answers recorded."}</p>
                 </div>
-
-                {submission.uploaded_file_name ? (
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm">
-                    <div>
-                      <p className="font-semibold text-dark">Uploaded file</p>
-                      <p className="mt-1 text-slate-600">{submission.uploaded_file_name}</p>
-                    </div>
-                    <a
-                      href={`/api/instructor/submissions/${submission.id}/file`}
-                      className="inline-flex min-h-11 items-center justify-center rounded-xl bg-dark px-4 py-2 text-sm font-bold text-white"
-                    >
-                      Download
-                    </a>
-                  </div>
-                ) : null}
 
                 <div id={`grade-${submission.id}`}>
                   <GradeForm submission={submission} />
