@@ -117,6 +117,7 @@ export default async function InstructorDashboardPage() {
               ["My Courses", "/instructor/courses"],
               ["My Students", "/instructor/students"],
               ["Enrollments", "/instructor/enrollments"],
+              ["Certificates", "/instructor/certificates"],
               ["Notifications", "/instructor/notifications"],
             ].map(([label, href]) => (
               <Link

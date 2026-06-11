@@ -21,6 +21,7 @@ const studentAcademyLinks = [
   { label: "My Courses", href: "/my-courses" },
   { label: "Attendance", href: "/my-attendance" },
   { label: "Progress", href: "/my-progress" },
+  { label: "Certificates", href: "/my-certificates" },
   { label: "Payments", href: "/payments" },
   { label: "Notifications", href: "/notifications" },
 ];
@@ -31,6 +32,7 @@ const parentAcademyLinks = [
   { label: "Children", href: "/my-children" },
   { label: "Assignments", href: "/assignments" },
   { label: "Payments", href: "/payments" },
+  { label: "Certificates", href: "/my-certificates" },
   { label: "Progress", href: "/my-progress" },
   { label: "Notifications", href: "/notifications" },
 ];
@@ -40,6 +42,7 @@ const adminAcademyLinks = [
   { label: "Change Password", href: "/change-password" },
   { label: "My Courses", href: "/my-courses" },
   { label: "Payments", href: "/payments" },
+  { label: "Certificates", href: "/admin/certificates" },
   { label: "Notifications", href: "/notifications" },
 ];
 
@@ -53,6 +56,7 @@ const instructorAcademyLinks = [
   { label: "Lesson Notes", href: "/instructor/lesson-notes" },
   { label: "Progress Reports", href: "/instructor/progress" },
   { label: "Assignments", href: "/instructor/assignments" },
+  { label: "Certificates", href: "/instructor/certificates" },
   { label: "Submissions", href: "/instructor/submissions" },
   { label: "Notifications", href: "/instructor/notifications" },
 ];

@@ -15,11 +15,13 @@ import PendingStudentActions from "@/components/admin/PendingStudentActions";
 import PendingAccountActions from "@/components/admin/PendingAccountActions";
 import AdminCharts from "@/components/admin/AdminCharts";
 import DashboardPaymentStatusActions, { PayNowButton } from "@/components/payments/DashboardPaymentStatusActions";
+import ChildCertificates from "@/components/certificates/ChildCertificates";
 
 const quickActions = {
   admin: [
     { title: "Manage Notifications", description: "Publish updates for students and parents.", href: "/notifications" },
     { title: "View Payments", description: "Review the latest academy payments.", href: "/payments" },
+    { title: "Certificates", description: "Issue and manage learner certificates.", href: "/admin/certificates" },
     { title: "Browse Courses", description: "Review available academy courses.", href: "/courses" },
     { title: "Activity Logs", description: "Review admin activity.", href: "/admin/activity-logs" },
   ],
@@ -28,12 +30,14 @@ const quickActions = {
     { title: "My Courses", description: "Review your children’s enrolled courses.", href: "/my-courses" },
     { title: "My Children", description: "Review children and assigned courses.", href: "/my-children" },
     { title: "Payments", description: "Review payment history and printable receipts.", href: "/payments" },
+    { title: "Certificates", description: "View certificates issued for your children.", href: "/my-certificates" },
   ],
   student: [
     { title: "My Courses", description: "Open your enrolled courses.", href: "/my-courses" },
     { title: "Assignments", description: "Review and submit your class assignments.", href: "/assignments" },
     { title: "Attendance", description: "Track your class attendance records.", href: "/my-attendance" },
     { title: "Progress", description: "Read instructor feedback and progress updates.", href: "/my-progress" },
+    { title: "Certificates", description: "Download completed programme certificates.", href: "/my-certificates" },
     { title: "Notifications", description: "Read the latest academy updates.", href: "/notifications" },
     { title: "Payments", description: "Pay invoices and review receipts.", href: "/payments" },
   ],
@@ -41,6 +45,7 @@ const quickActions = {
     { title: "Attendance", description: "Record class attendance.", href: "/instructor/attendance" },
     { title: "Lesson Notes", description: "Document what was covered in class.", href: "/instructor/lesson-notes" },
     { title: "Progress Reports", description: "Update student progress.", href: "/instructor/progress" },
+    { title: "Certificates", description: "Issue certificates for completed learners.", href: "/instructor/certificates" },
   ],
 };
 
@@ -490,6 +495,10 @@ function ParentDashboard({ dashboard }) {
                         className="px-4"
                       />
                     ) : null}
+                  </div>
+                  <div className="mt-5 border-t border-slate-100 pt-5">
+                    <h4 className="mb-3 text-sm font-bold text-dark">Certificates</h4>
+                    <ChildCertificates childId={child.id} childName={child.full_name} />
                   </div>
                 </AcademyCard>
               ))}
