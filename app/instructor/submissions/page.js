@@ -15,6 +15,16 @@ const submissionTypeLabels = {
   practical: "Practical assessment",
 };
 
+function resultLabel(submission) {
+  const score = submission.grade ?? submission.score ?? "Not graded";
+  const marks = submission.max_score || submission.assignment_marks || 100;
+  const percentage = submission.percentage ?? null;
+  const letterGrade = submission.letter_grade || "";
+  const summary = `${score} / ${marks}`;
+  if (percentage === null && !letterGrade) return summary;
+  return `${summary} (${letterGrade || "-"} - ${percentage ?? 0}%)`;
+}
+
 export default async function InstructorSubmissionsPage() {
   try {
     const [{ authorized }, submissions] = await Promise.all([
@@ -67,7 +77,7 @@ export default async function InstructorSubmissionsPage() {
                   </div>
                   <div className="rounded-xl bg-slate-50 px-4 py-3">
                     <dt className="font-semibold text-slate-500">Grade</dt>
-                    <dd className="mt-1 font-bold text-dark">{submission.grade ?? submission.score ?? "Not graded"} / {submission.max_score || submission.assignment_marks || 100}</dd>
+                    <dd className="mt-1 font-bold text-dark">{resultLabel(submission)}</dd>
                   </div>
                   <div className="rounded-xl bg-slate-50 px-4 py-3">
                     <dt className="font-semibold text-slate-500">Graded date</dt>

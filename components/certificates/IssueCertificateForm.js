@@ -6,6 +6,10 @@ import { AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function IssueCertificateForm({ enrollmentId, courseId, studentName, onSuccess }) {
   const [completionDate, setCompletionDate] = useState('');
+  const [certificateType, setCertificateType] = useState('');
+  const [finalScore, setFinalScore] = useState('');
+  const [finalGrade, setFinalGrade] = useState('');
+  const [attendancePercentage, setAttendancePercentage] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
@@ -22,9 +26,18 @@ export default function IssueCertificateForm({ enrollmentId, courseId, studentNa
 
     try {
       setLoading(true);
-      await certificateApi.issueCertificate(enrollmentId, completionDate);
+      await certificateApi.issueCertificate(enrollmentId, completionDate, {
+        ...(certificateType ? { certificate_type: certificateType } : {}),
+        ...(finalScore ? { final_score: finalScore } : {}),
+        ...(finalGrade ? { final_grade: finalGrade } : {}),
+        ...(attendancePercentage ? { attendance_percentage: attendancePercentage } : {}),
+      });
       setSuccess(true);
       setCompletionDate('');
+      setCertificateType('');
+      setFinalScore('');
+      setFinalGrade('');
+      setAttendancePercentage('');
       if (onSuccess) {
         setTimeout(() => onSuccess(), 2000);
       }
@@ -71,6 +84,70 @@ export default function IssueCertificateForm({ enrollmentId, courseId, studentNa
           required
           className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
+      </div>
+
+      <div className="mb-4 grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="certificate_type" className="block text-sm font-semibold text-gray-700 mb-2">
+            Certificate Type
+          </label>
+          <select
+            id="certificate_type"
+            value={certificateType}
+            onChange={(e) => setCertificateType(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Auto select</option>
+            <option value="participation">Participation</option>
+            <option value="completion">Completion</option>
+            <option value="excellence">Excellence</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="final_grade" className="block text-sm font-semibold text-gray-700 mb-2">
+            Final Grade
+          </label>
+          <input
+            id="final_grade"
+            value={finalGrade}
+            onChange={(e) => setFinalGrade(e.target.value.toUpperCase())}
+            maxLength={2}
+            placeholder="Auto"
+            className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label htmlFor="final_score" className="block text-sm font-semibold text-gray-700 mb-2">
+            Final Score
+          </label>
+          <input
+            type="number"
+            id="final_score"
+            min="0"
+            max="100"
+            step="0.01"
+            value={finalScore}
+            onChange={(e) => setFinalScore(e.target.value)}
+            placeholder="Auto"
+            className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label htmlFor="attendance_percentage" className="block text-sm font-semibold text-gray-700 mb-2">
+            Attendance Percentage
+          </label>
+          <input
+            type="number"
+            id="attendance_percentage"
+            min="0"
+            max="100"
+            step="0.01"
+            value={attendancePercentage}
+            onChange={(e) => setAttendancePercentage(e.target.value)}
+            placeholder="Auto"
+            className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
       </div>
 
       <div className="bg-blue-50 p-4 rounded mb-4 text-sm text-blue-700">

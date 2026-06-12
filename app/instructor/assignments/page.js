@@ -10,11 +10,12 @@ const submissionTypeLabels = {
 
 export default async function InstructorAssignmentsPage() {
   try {
-    const [{ authorized }, courses, enrollments, assignments] = await Promise.all([
+    const [{ user, authorized }, courses, enrollments, assignments, dashboard] = await Promise.all([
       requireInstructor(),
       fetchInternalJson("/api/instructor/courses", "assignments-page"),
       fetchInternalJson("/api/instructor/enrollments", "assignments-page"),
       fetchInternalJson("/api/instructor/assignments", "assignments-page"),
+      fetchInternalJson("/api/dashboard", "assignments-page"),
     ]);
     if (!authorized) {
       return <section className="mx-auto max-w-7xl px-5 py-10"><ErrorState message="Instructor access is required." /></section>;
@@ -24,7 +25,12 @@ export default async function InstructorAssignmentsPage() {
         <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
           <AcademyCard>
             <SectionHeading title="Create Assessment" description="Publish a quiz or practical assessment for a course group or selected learner." />
-            <AssignmentForm courses={courses} enrollments={enrollments} />
+            <AssignmentForm
+              courses={courses}
+              enrollments={enrollments}
+              instructors={dashboard.instructors || []}
+              allowInstructorSelect={user.role === "admin"}
+            />
           </AcademyCard>
           <section>
             <SectionHeading title="Assessments" />
@@ -67,6 +73,8 @@ export default async function InstructorAssignmentsPage() {
                       assignment={assignment}
                       courses={courses}
                       enrollments={enrollments}
+                      instructors={dashboard.instructors || []}
+                      allowInstructorSelect={user.role === "admin"}
                     />
                     <PracticalGradeForm assignment={assignment} enrollments={enrollments} />
                   </AcademyCard>

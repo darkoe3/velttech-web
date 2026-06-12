@@ -4,6 +4,10 @@ import { useState } from 'react';
 import { certificateApi } from '@/lib/certificate-api';
 import { AlertCircle, CheckCircle, Download, Trash2 } from 'lucide-react';
 
+function humanize(value) {
+  return value ? value.replaceAll('_', ' ').replace(/^\w/, (letter) => letter.toUpperCase()) : 'Not recorded';
+}
+
 export default function CertificatesList({ certificates, onRefresh, canRevoke = false }) {
   const [downloading, setDownloading] = useState(null);
   const [revoking, setRevoking] = useState(null);
@@ -71,6 +75,12 @@ export default function CertificatesList({ certificates, onRefresh, canRevoke = 
                   Programme
                 </th>
                 <th className="border border-gray-300 px-4 py-2 text-left">
+                  Type
+                </th>
+                <th className="border border-gray-300 px-4 py-2 text-left">
+                  Result
+                </th>
+                <th className="border border-gray-300 px-4 py-2 text-left">
                   Issued Date
                 </th>
                 <th className="border border-gray-300 px-4 py-2 text-left">
@@ -94,7 +104,13 @@ export default function CertificatesList({ certificates, onRefresh, canRevoke = 
                     {cert.course_title}
                   </td>
                   <td className="border border-gray-300 px-4 py-2">
-                    {new Date(cert.issued_at).toLocaleDateString('en-US', {
+                    {humanize(cert.certificate_type)}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {cert.final_grade || 'N/A'} {cert.final_score ? `(${cert.final_score}%)` : ''}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {new Date(cert.issue_date || cert.issued_at).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric',

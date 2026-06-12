@@ -45,6 +45,16 @@ function assessmentTypeLabel(value) {
   return value === "practical" ? "Practical assessment" : "Quiz assessment";
 }
 
+function resultLabel(result, fallbackMarks) {
+  const score = result.grade ?? result.score ?? "Not set";
+  const marks = result.max_score || fallbackMarks || 100;
+  const percentage = result.percentage ?? null;
+  const letterGrade = result.letter_grade || "";
+  const summary = `${score} / ${marks}`;
+  if (percentage === null && !letterGrade) return summary;
+  return `${summary} (${letterGrade || "-"} - ${percentage ?? 0}%)`;
+}
+
 function normalizeQuestions(questions = []) {
   return questions.length ? questions.map((question) => ({ ...emptyQuestion, ...question })) : [{ ...emptyQuestion }];
 }
@@ -364,7 +374,7 @@ export function SubmissionForm({ assignment, existingSubmission }) {
         <p className="font-semibold text-dark">This practical assessment will be graded directly by your instructor.</p>
         {existingSubmission?.status === "graded" ? (
           <div className="mt-3">
-            <p className="font-semibold">Score: {existingSubmission.grade ?? existingSubmission.score ?? "Not set"} / {existingSubmission.max_score || assignment.marks || 100}</p>
+            <p className="font-semibold">Score: {resultLabel(existingSubmission, assignment.marks)}</p>
             <p className="mt-2">{existingSubmission.feedback || "No feedback yet."}</p>
           </div>
         ) : null}
@@ -404,7 +414,7 @@ export function SubmissionForm({ assignment, existingSubmission }) {
       ))}
       {existingSubmission?.status === "graded" ? (
         <div className="rounded-lg bg-emerald-50 p-4 text-sm text-emerald-800">
-          <p className="font-semibold">Score: {existingSubmission.grade ?? existingSubmission.score ?? "Not set"} / {existingSubmission.max_score || assignment.marks || 100}</p>
+          <p className="font-semibold">Score: {resultLabel(existingSubmission, assignment.marks)}</p>
           <p className="mt-2">{existingSubmission.feedback || "Quiz submitted."}</p>
         </div>
       ) : null}

@@ -21,6 +21,16 @@ function assignmentStatus(assignment, submission) {
   return dueDate && dueDate < new Date() ? "overdue" : "pending";
 }
 
+function resultLabel(result, fallbackMarks) {
+  const score = result.grade ?? result.score ?? "Not set";
+  const marks = result.max_score || fallbackMarks || 100;
+  const percentage = result.percentage ?? null;
+  const letterGrade = result.letter_grade || "";
+  const summary = `${score} / ${marks}`;
+  if (percentage === null && !letterGrade) return summary;
+  return `${summary} (${letterGrade || "-"} - ${percentage ?? 0}%)`;
+}
+
 export default async function AssignmentsPage() {
   try {
     const user = await getCurrentUser();
@@ -97,7 +107,7 @@ export default async function AssignmentsPage() {
                       </div>
                       {submission?.status === "graded" ? (
                         <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
-                          <p className="font-semibold">Grade: {submission.grade ?? submission.score ?? "Not set"} / {submission.max_score || assignment.marks || 100}</p>
+                          <p className="font-semibold">Grade: {resultLabel(submission, assignment.marks)}</p>
                           <p className="mt-2 text-slate-500">Graded {formatDate(submission.graded_at)}</p>
                           <p className="mt-2">{submission.feedback || "No feedback yet."}</p>
                         </div>
@@ -143,7 +153,7 @@ export default async function AssignmentsPage() {
                               </span>
                             </div>
                             {item.status === "graded" ? (
-                              <p className="mt-3 text-slate-600">Grade: {item.grade ?? item.score ?? "Not set"} / {item.max_score || assignment.marks || 100} - {item.feedback || "No feedback yet."}</p>
+                              <p className="mt-3 text-slate-600">Grade: {resultLabel(item, assignment.marks)} - {item.feedback || "No feedback yet."}</p>
                             ) : null}
                             {item.status === "submitted" ? <p className="mt-3 font-semibold text-blue-700">Awaiting grading</p> : null}
                             {item.status === "returned" ? <p className="mt-3 text-amber-800">Returned: {item.feedback || "Please review and resubmit."}</p> : null}
