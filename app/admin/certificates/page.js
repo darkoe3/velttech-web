@@ -20,14 +20,26 @@ export default function AdminCertificatesPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [certsData, coursesData] = await Promise.all([
-          certificateApi.listCertificates({ status: 'issued' }),
-          courseApi.listCourses(),
-        ]);
+        // Fetch certificates
+        let certsData = [];
+        try {
+          certsData = await certificateApi.listCertificates({ status: 'issued' });
+        } catch (err) {
+          console.error('Failed to load certificates:', err);
+          setError('Failed to load certificates');
+        }
+        
+        // Fetch courses
+        let coursesData = [];
+        try {
+          coursesData = await courseApi.listCourses();
+        } catch (err) {
+          console.error('Failed to load courses:', err);
+          setError(prev => prev ? prev : 'Failed to load courses');
+        }
+        
         setCertificates(certsData);
         setCourses(coursesData);
-      } catch (err) {
-        setError('Failed to load data');
       } finally {
         setLoading(false);
       }

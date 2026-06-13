@@ -18,20 +18,31 @@ export default function InstructorCertificatesPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [certsData, coursesData] = await Promise.all([
-          certificateApi.listCertificates({ status: 'issued' }),
-          fetch('/api/instructor/courses', { cache: 'no-store' }).then(async (response) => {
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok) {
-              throw new Error(data?.detail || 'Failed to load instructor courses');
-            }
-            return data;
-          }),
-        ]);
+        // Fetch certificates
+        let certsData = [];
+        try {
+          certsData = await certificateApi.listCertificates({ status: 'issued' });
+        } catch (err) {
+          console.error('Failed to load certificates:', err);
+          setError('Failed to load certificates');
+        }
+        
+        // Fetch instructor courses
+        let coursesData = [];
+        try {
+          const response = await fetch('/api/instructor/courses', { cache: 'no-store' });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(data?.detail || 'Failed to load instructor courses');
+          }
+          coursesData = data;
+        } catch (err) {
+          console.error('Failed to load instructor courses:', err);
+          setError(prev => prev ? prev : 'Failed to load instructor courses');
+        }
+        
         setCertificates(certsData);
         setCourses(coursesData);
-      } catch (err) {
-        setError('Failed to load data');
       } finally {
         setLoading(false);
       }
