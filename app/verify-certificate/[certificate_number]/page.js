@@ -4,15 +4,11 @@ import { CheckCircle, XCircle } from "lucide-react";
 
 function formatDate(value) {
   if (!value) return "Not recorded";
-  return new Date(value).toLocaleDateString("en-US", {
+  return new Date(value).toLocaleDateString("en-GB", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-}
-
-function humanize(value) {
-  return value ? value.replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase()) : "Not recorded";
 }
 
 async function verifyCertificate(certificateNumber) {
@@ -41,6 +37,9 @@ export default async function VerifyCertificatePage({ params }) {
     error = err.message;
   }
 
+  const isValid = certificate?.status_label === "Valid";
+  const statusText = isValid ? "VALID" : "REVOKED";
+
   return (
     <section className="min-h-screen bg-slate-950 px-5 py-12 text-slate-100">
       <div className="mx-auto max-w-3xl">
@@ -58,13 +57,15 @@ export default async function VerifyCertificatePage({ params }) {
           <div className="overflow-hidden rounded-lg bg-white text-slate-900 shadow-xl">
             <div className="bg-emerald-700 px-8 py-6 text-white">
               <div className="flex items-center gap-3">
-                {certificate.status_label === "Valid" ? (
+                {isValid ? (
                   <CheckCircle className="h-8 w-8" />
                 ) : (
                   <XCircle className="h-8 w-8 text-red-100" />
                 )}
                 <div>
-                  <h1 className="text-3xl font-bold">Certificate Verification</h1>
+                  <h1 className="text-3xl font-bold">
+                    {isValid ? "✓ VERIFIED CERTIFICATE" : "✕ CERTIFICATE REVOKED"}
+                  </h1>
                   <p className="mt-1 text-emerald-50">{certificate.certificate_number}</p>
                 </div>
               </div>
@@ -73,56 +74,48 @@ export default async function VerifyCertificatePage({ params }) {
             <div className="px-8 py-8">
               {certificate.status_label === "Revoked" && (
                 <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">
-                  <p className="text-center text-lg font-bold text-red-700">Certificate Revoked</p>
+                  <p className="text-center text-lg font-bold text-red-700">CERTIFICATE REVOKED</p>
                 </div>
               )}
               
               <dl className="grid gap-6 sm:grid-cols-2">
                 <div>
+                  <dt className="text-sm font-semibold text-slate-500">Issued by</dt>
+                  <dd className="mt-1 text-lg font-bold">{certificate.issued_by_name || "Velttech Academy"}</dd>
+                </div>
+                <div>
                   <dt className="text-sm font-semibold text-slate-500">Certificate Number</dt>
                   <dd className="mt-1 text-lg font-bold">{certificate.certificate_number}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-semibold text-slate-500">Student Name</dt>
+                  <dt className="text-sm font-semibold text-slate-500">Recipient</dt>
                   <dd className="mt-1 text-lg font-bold">{certificate.student_name}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-semibold text-slate-500">Course</dt>
-                  <dd className="mt-1 text-lg font-bold">{certificate.course_title}</dd>
+                  <dt className="text-sm font-semibold text-slate-500">Programme</dt>
+                  <dd className="mt-1 text-lg font-bold">
+                    {certificate.programme_name || "Young Innovators Academy"}
+                  </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-semibold text-slate-500">Certificate Type</dt>
-                  <dd className="mt-1 text-lg font-bold">{humanize(certificate.certificate_type)}</dd>
+                  <dt className="text-sm font-semibold text-slate-500">Specialization</dt>
+                  <dd className="mt-1 text-lg font-bold">
+                    {certificate.specialization_title || certificate.course_title}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-sm font-semibold text-slate-500">Issue Date</dt>
                   <dd className="mt-1 text-lg font-bold">{formatDate(certificate.issue_date || certificate.issued_at)}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-semibold text-slate-500">Completion Date</dt>
-                  <dd className="mt-1 text-lg font-bold">{formatDate(certificate.completion_date)}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-semibold text-slate-500">Final Grade</dt>
-                  <dd className="mt-1 text-lg font-bold">{certificate.final_grade || "Not recorded"}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-semibold text-slate-500">Final Score</dt>
-                  <dd className="mt-1 text-lg font-bold">{certificate.final_score !== null && certificate.final_score !== undefined ? `${certificate.final_score}%` : "Not recorded"}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-semibold text-slate-500">Attendance</dt>
-                  <dd className="mt-1 text-lg font-bold">{certificate.attendance_percentage !== null && certificate.attendance_percentage !== undefined ? `${certificate.attendance_percentage}%` : "Not recorded"}</dd>
-                </div>
-                <div>
                   <dt className="text-sm font-semibold text-slate-500">Status</dt>
                   <dd className="mt-1">
                     <span className={`inline-flex rounded-full px-3 py-1 text-sm font-bold ${
-                      certificate.status_label === "Valid"
+                      isValid
                         ? "bg-emerald-100 text-emerald-800"
                         : "bg-red-100 text-red-800"
                     }`}>
-                      {certificate.status_label}
+                      {statusText}
                     </span>
                   </dd>
                 </div>

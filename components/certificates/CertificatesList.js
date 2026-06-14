@@ -2,15 +2,20 @@
 
 import { useState } from 'react';
 import { certificateApi } from '@/lib/certificate-api';
-import { AlertCircle, CheckCircle, Download, Trash2 } from 'lucide-react';
+import { Download, RefreshCcw, Trash2 } from 'lucide-react';
 
 function humanize(value) {
   return value ? value.replaceAll('_', ' ').replace(/^\w/, (letter) => letter.toUpperCase()) : 'Not recorded';
 }
 
-export default function CertificatesList({ certificates, onRefresh, canRevoke = false }) {
+function isActive(status) {
+  return status === 'active' || status === 'issued';
+}
+
+export default function CertificatesList({ certificates, onRefresh, canRevoke = false, canReissue = false }) {
   const [downloading, setDownloading] = useState(null);
   const [revoking, setRevoking] = useState(null);
+  const [reissuing, setReissuing] = useState(null);
   const [error, setError] = useState(null);
 
   const handleDownload = async (id, certificateNumber) => {
@@ -48,6 +53,18 @@ export default function CertificatesList({ certificates, onRefresh, canRevoke = 
     }
   };
 
+  const handleReissue = async (id) => {
+    try {
+      setReissuing(id);
+      await certificateApi.reissueCertificate(id);
+      onRefresh();
+    } catch (err) {
+      setError('Failed to reissue certificate');
+    } finally {
+      setReissuing(null);
+    }
+  };
+
   return (
     <div>
       {error && (
@@ -75,10 +92,10 @@ export default function CertificatesList({ certificates, onRefresh, canRevoke = 
                   Programme
                 </th>
                 <th className="border border-gray-300 px-4 py-2 text-left">
-                  Type
+                  Specialization
                 </th>
                 <th className="border border-gray-300 px-4 py-2 text-left">
-                  Result
+                  Type
                 </th>
                 <th className="border border-gray-300 px-4 py-2 text-left">
                   Issued Date
@@ -101,13 +118,13 @@ export default function CertificatesList({ certificates, onRefresh, canRevoke = 
                     {cert.student_name}
                   </td>
                   <td className="border border-gray-300 px-4 py-2">
-                    {cert.course_title}
+                    {cert.programme_name || 'Young Innovators Academy'}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {cert.specialization_title || cert.course_title}
                   </td>
                   <td className="border border-gray-300 px-4 py-2">
                     {humanize(cert.certificate_type)}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {cert.final_grade || 'N/A'} {cert.final_score ? `(${cert.final_score}%)` : ''}
                   </td>
                   <td className="border border-gray-300 px-4 py-2">
                     {new Date(cert.issue_date || cert.issued_at).toLocaleDateString('en-US', {
@@ -119,14 +136,14 @@ export default function CertificatesList({ certificates, onRefresh, canRevoke = 
                   <td className="border border-gray-300 px-4 py-2">
                     <span
                       className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-                        cert.status === 'issued'
+                        isActive(cert.status)
                           ? 'bg-green-100 text-green-800'
                           : cert.status === 'revoked'
                             ? 'bg-red-100 text-red-800'
                             : 'bg-yellow-100 text-yellow-800'
                       }`}
                     >
-                      {cert.status === 'issued'
+                      {isActive(cert.status)
                         ? 'Valid'
                         : cert.status === 'revoked'
                           ? 'Revoked'
@@ -145,7 +162,7 @@ export default function CertificatesList({ certificates, onRefresh, canRevoke = 
                       >
                         <Download className="w-4 h-4 text-blue-600" />
                       </button>
-                      {canRevoke && cert.status === 'issued' && (
+                      {canRevoke && isActive(cert.status) && (
                         <button
                           onClick={() => handleRevoke(cert.id)}
                           disabled={revoking === cert.id}
@@ -153,6 +170,16 @@ export default function CertificatesList({ certificates, onRefresh, canRevoke = 
                           title="Revoke"
                         >
                           <Trash2 className="w-4 h-4 text-red-600" />
+                        </button>
+                      )}
+                      {canReissue && cert.status === 'revoked' && (
+                        <button
+                          onClick={() => handleReissue(cert.id)}
+                          disabled={reissuing === cert.id}
+                          className="p-2 hover:bg-green-100 rounded disabled:opacity-50"
+                          title="Reissue"
+                        >
+                          <RefreshCcw className="w-4 h-4 text-green-700" />
                         </button>
                       )}
                     </div>

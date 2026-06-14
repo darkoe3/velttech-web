@@ -41,7 +41,7 @@ export const metadata = {
 
 const demoUrl =
   "https://wa.me/233555106820?text=Hello%20Velttech,%20I%20want%20a%20demo%20of%20VeltSmartSchoolApp";
-const launchUrl = "https://veltsmartschoolapp.vercel.app";
+const launchUrl = "https://app.velttech.org/";
 
 const features = [
   {
@@ -200,7 +200,7 @@ function ProductCtas({ dark = false }) {
             : "border-slate-300 bg-white text-dark shadow-slate-900/10 hover:border-dark focus:ring-offset-light"
         }`}
       >
-        Launch App
+        Launch School App
         <ArrowRight size={18} aria-hidden="true" />
       </Link>
     </div>

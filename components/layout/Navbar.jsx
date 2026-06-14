@@ -232,10 +232,12 @@ export default function Navbar() {
             Talk to us
           </Link>
           <Link
-            href="/#services"
+            href="https://app.velttech.org/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-dark shadow-sm shadow-primary/30 transition hover:bg-secondary"
           >
-            Explore services
+            Launch School App
           </Link>
           {user ? (
             <button

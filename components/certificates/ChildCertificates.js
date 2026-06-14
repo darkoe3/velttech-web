@@ -43,8 +43,8 @@ export default function ChildCertificates({ childId, childName }) {
     }
   };
 
-  const handleShare = (code) => {
-    const verificationUrl = `https://velttech.org/certificates/verify/${code}`;
+  const handleShare = (certificateNumber) => {
+    const verificationUrl = `https://portal.velttech.org/verify/${certificateNumber}/`;
     navigator.clipboard.writeText(verificationUrl);
     alert('Verification link copied to clipboard!');
   };
@@ -54,7 +54,7 @@ export default function ChildCertificates({ childId, childName }) {
       <div className="bg-gray-50 rounded-lg p-6 text-center">
         <p className="text-gray-600">
           No certificates yet. Certificates will appear here once {childName}{' '}
-          completes a course.
+          completes a specialization.
         </p>
       </div>
     );
@@ -70,13 +70,22 @@ export default function ChildCertificates({ childId, childName }) {
         >
           <div className="flex items-start justify-between mb-3">
             <div>
-              <h4 className="font-bold text-gray-900">{cert.course_title}</h4>
+              <h4 className="font-bold text-gray-900">
+                {cert.programme_name || 'Young Innovators Academy'}
+              </h4>
+              <p className="text-sm font-semibold text-gray-600">
+                Specialization: {cert.specialization_title || cert.course_title}
+              </p>
               <p className="text-sm text-gray-600 font-mono">
                 {cert.certificate_number}
               </p>
             </div>
-            <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
-              Valid
+            <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
+              cert.status === 'active' || cert.status === 'issued'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            }`}>
+              {cert.status === 'active' || cert.status === 'issued' ? 'Valid' : 'Revoked'}
             </span>
           </div>
 
@@ -113,7 +122,7 @@ export default function ChildCertificates({ childId, childName }) {
               Download
             </button>
             <button
-              onClick={() => handleShare(cert.verification_code)}
+              onClick={() => handleShare(cert.certificate_number)}
               className="flex-1 flex items-center justify-center gap-2 bg-gray-600 text-white text-sm font-semibold py-2 px-3 rounded hover:bg-gray-700 transition"
             >
               <Share2 className="w-4 h-4" />

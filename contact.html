@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contact Form Workflow</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    #formContainer {
+      display: none;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      width: 300px;
+    }
+    h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #feedback {
+      margin-top: 10px;
+      text-align: center;
+      font-weight: bold;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="registerBtn">Register</button>
+
+  <div id="formContainer">
+    <h2>Contact Form</h2>
+    <form id="contactForm">
+      <input type="text" id="name" placeholder="Your Name" required>
+      <input type="email" id="email" placeholder="Your Email" required>
+      <textarea id="message" placeholder="Your Message" required></textarea>
+      <button type="submit">Submit</button>
+    </form>
+    <div id="feedback"></div>
+  </div>
+
+  <script>
+    const registerBtn = document.getElementById('registerBtn');
+    const formContainer = document.getElementById('formContainer');
+    const contactForm = document.getElementById('contactForm');
+    const feedback = document.getElementById('feedback');
+
+    // Step 1: User clicks register
+    registerBtn.addEventListener('click', () => {
+      formContainer.style.display = 'block';
+      registerBtn.style.display = 'none';
+    });
+
+    // Step 2: User fills form and submits
+    contactForm.addEventListener('submit', (e) => {
+      e.preventDefault(); // prevent page reload
+
+      // Collect form data
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const message = document.getElementById('message').value;
+
+      // Step 3: Provide feedback
+      if(name && email && message){
+        feedback.textContent = "Thank you, " + name + "! Your form has been submitted successfully.";
+        contactForm.reset();
+      } else {
+        feedback.textContent = "Please fill in all fields.";
+        feedback.style.color = "red";
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -45,8 +45,8 @@ export default function MyCertificatesPage() {
     }
   };
 
-  const handleShare = (code) => {
-    const verificationUrl = `https://velttech.org/certificates/verify/${code}`;
+  const handleShare = (certificateNumber) => {
+    const verificationUrl = `https://portal.velttech.org/verify/${certificateNumber}/`;
     navigator.clipboard.writeText(verificationUrl);
     alert('Verification link copied to clipboard!');
   };
@@ -68,7 +68,7 @@ export default function MyCertificatesPage() {
             My Certificates
           </h1>
           <p className="text-gray-600">
-            View and download your course completion certificates
+            View and download your Young Innovators Academy certificates
           </p>
         </div>
 
@@ -100,7 +100,7 @@ export default function MyCertificatesPage() {
               No Certificates Yet
             </h3>
             <p className="text-gray-600">
-              Once you complete a course, your certificate will appear here.
+              Once you complete a specialization, your certificate will appear here.
             </p>
           </div>
         ) : (
@@ -116,8 +116,11 @@ export default function MyCertificatesPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                        {cert.course_title}
+                        {cert.programme_name || 'Young Innovators Academy'}
                       </h3>
+                      <p className="mb-4 text-sm font-semibold text-gray-600">
+                        Specialization: {cert.specialization_title || cert.course_title}
+                      </p>
 
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
@@ -159,12 +162,12 @@ export default function MyCertificatesPage() {
                           <p className="text-sm text-gray-600">Status</p>
                           <span
                             className={`inline-block px-3 py-1 rounded-full text-sm font-semibold text-white ${
-                              cert.status === 'issued'
+                              cert.status === 'active' || cert.status === 'issued'
                                 ? 'bg-green-500'
                                 : 'bg-red-500'
                             }`}
                           >
-                            {cert.status === 'issued' ? 'Valid' : 'Revoked'}
+                            {cert.status === 'active' || cert.status === 'issued' ? 'Valid' : 'Revoked'}
                           </span>
                         </div>
                       </div>
@@ -184,7 +187,7 @@ export default function MyCertificatesPage() {
                     </button>
 
                     <button
-                      onClick={() => handleShare(cert.verification_code)}
+                      onClick={() => handleShare(cert.certificate_number)}
                       className="flex-1 flex items-center justify-center gap-2 bg-gray-600 text-white font-semibold py-3 px-4 rounded hover:bg-gray-700 transition"
                     >
                       <Share2 className="w-5 h-5" />

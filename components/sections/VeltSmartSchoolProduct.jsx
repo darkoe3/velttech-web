@@ -21,7 +21,7 @@ import Reveal from "@/components/ui/Reveal";
 
 const demoUrl =
   "https://wa.me/233555106820?text=Hello%20Velttech,%20I%20want%20a%20demo%20of%20VeltSmartSchoolApp";
-const launchUrl = "https://veltsmartschoolapp.vercel.app";
+const launchUrl = "https://app.velttech.org/";
 
 const features = [
   { label: "Student & Teacher Management", icon: Users },
@@ -103,7 +103,7 @@ export default function VeltSmartSchoolProduct() {
               rel="noopener noreferrer"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-black text-dark shadow-lg shadow-primary/25 transition hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-dark"
             >
-              Launch App
+              Launch School App
               <ExternalLink size={18} aria-hidden="true" />
             </Link>
             <Link

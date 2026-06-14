@@ -108,12 +108,12 @@ export default function Hero() {
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="https://veltsmartschoolapp.vercel.app"
+              href="https://app.velttech.org/"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-black text-dark shadow-lg shadow-primary/25 transition hover:bg-secondary"
             >
-              SmartSchoolApp
+              Launch School App
               <ExternalLink size={18} aria-hidden="true" />
             </Link>
             <Link
