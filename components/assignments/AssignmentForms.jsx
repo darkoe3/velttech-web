@@ -55,6 +55,14 @@ function resultLabel(result, fallbackMarks) {
   return `${summary} (${letterGrade || "-"} - ${percentage ?? 0}%)`;
 }
 
+function studentStatus(assignment, submission, started = false) {
+  if (submission?.status === "graded") return "Graded";
+  if (submission?.status === "submitted") return "Submitted";
+  if (submission?.status === "returned") return "Returned";
+  if (started) return "In Progress";
+  return "Not Started";
+}
+
 function normalizeQuestions(questions = []) {
   return questions.length ? questions.map((question) => ({ ...emptyQuestion, ...question })) : [{ ...emptyQuestion }];
 }
@@ -350,12 +358,19 @@ export function SubmissionForm({ assignment, existingSubmission }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [started, setStarted] = useState(Boolean(existingSubmission?.quiz_answers && Object.keys(existingSubmission.quiz_answers).length));
   const [answers, setAnswers] = useState(existingSubmission?.quiz_answers || {});
   const isPractical = assignment.submission_type === "practical";
   const locked = existingSubmission?.status === "graded";
+  const questions = assignment.questions || [];
+  const status = studentStatus(assignment, existingSubmission, started);
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (questions.length === 0) {
+      setError("This quiz has no questions yet. Please contact your instructor.");
+      return;
+    }
     setPending(true);
     setError("");
     try {
@@ -370,11 +385,22 @@ export function SubmissionForm({ assignment, existingSubmission }) {
 
   if (isPractical) {
     return (
-      <div className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-700">
-        <p className="font-semibold text-dark">This practical assessment will be graded directly by your instructor.</p>
+      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Assessment Status</p>
+            <p className="mt-1 font-bold text-dark">{status}</p>
+          </div>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-700">
+            Practical assessment
+          </span>
+        </div>
+        <p className="mt-4 font-semibold text-dark">This practical assessment will be graded directly by your instructor.</p>
+        <p className="mt-2">No answer box or file upload is required in the portal.</p>
         {existingSubmission?.status === "graded" ? (
-          <div className="mt-3">
+          <div className="mt-4 rounded-lg bg-white p-4">
             <p className="font-semibold">Score: {resultLabel(existingSubmission, assignment.marks)}</p>
+            <p className="mt-2 text-slate-500">Graded date: {existingSubmission.graded_at ? new Date(existingSubmission.graded_at).toLocaleDateString("en-GH", { dateStyle: "medium" }) : "Not set"}</p>
             <p className="mt-2">{existingSubmission.feedback || "No feedback yet."}</p>
           </div>
         ) : null}
@@ -383,44 +409,96 @@ export function SubmissionForm({ assignment, existingSubmission }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+    <form onSubmit={handleSubmit} className="mt-4 space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
       <ErrorMessage error={error} />
-      {assignment.questions?.map((question, index) => (
-        <fieldset key={question.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <legend className="font-bold text-dark">Question {index + 1}</legend>
-          <p className="mt-2 text-sm text-slate-700">{question.question_text}</p>
-          <div className="mt-3 grid gap-2">
-            {[
-              ["A", question.option_a],
-              ["B", question.option_b],
-              ["C", question.option_c],
-              ["D", question.option_d],
-            ].map(([value, label]) => (
-              <label key={value} className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm">
-                <input
-                  type="radio"
-                  name={`question-${question.id}`}
-                  value={value}
-                  checked={answers[String(question.id)] === value}
-                  disabled={locked}
-                  required
-                  onChange={() => setAnswers((current) => ({ ...current, [String(question.id)]: value }))}
-                />
-                <span>{value}. {label}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      ))}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Assessment Status</p>
+          <p className="mt-1 font-bold text-dark">{status}</p>
+        </div>
+        {!locked && !started ? (
+          <button type="button" onClick={() => setStarted(true)} className="rounded-lg bg-dark px-4 py-3 text-sm font-bold text-white">
+            {questions.length ? "Start Assessment" : "View Assessment"}
+          </button>
+        ) : null}
+      </div>
+
+      {questions.length === 0 ? (
+        <p className="rounded-lg bg-white px-4 py-3 text-sm font-semibold text-amber-700">
+          This quiz has no questions yet. Please contact your instructor.
+        </p>
+      ) : null}
+
+      {started || locked ? (
+        <>
+          {questions.map((question, index) => (
+            <fieldset key={question.id} className="rounded-lg border border-slate-200 bg-white p-4">
+              <legend className="font-bold text-dark">Question {index + 1}</legend>
+              <p className="mt-2 text-sm text-slate-700">{question.question_text}</p>
+              <div className="mt-3 grid gap-2">
+                {[
+                  ["A", question.option_a],
+                  ["B", question.option_b],
+                  ["C", question.option_c],
+                  ["D", question.option_d],
+                ].map(([value, label]) => (
+                  <label key={value} className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm">
+                    <input
+                      type="radio"
+                      name={`question-${question.id}`}
+                      value={value}
+                      checked={answers[String(question.id)] === value}
+                      disabled={locked}
+                      required
+                      onChange={() => setAnswers((current) => ({ ...current, [String(question.id)]: value }))}
+                    />
+                    <span>{value}. {label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ))}
+          {!locked ? (
+            <div className="flex flex-wrap gap-3">
+              <button disabled={pending || questions.length === 0} className="rounded-lg bg-dark px-4 py-3 text-sm font-bold text-white disabled:opacity-60">
+                {pending ? "Submitting..." : "Submit Quiz"}
+              </button>
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <p className="rounded-lg bg-white px-4 py-3 text-sm text-slate-700">
+          Select Start Assessment to answer the quiz questions.
+        </p>
+      )}
+
+      {!locked && started && questions.length ? (
+        <div className="flex flex-wrap justify-between gap-3 text-sm text-slate-600">
+          <span>{Object.keys(answers).length} of {questions.length} answered</span>
+          <button type="button" onClick={() => setStarted(false)} className="font-bold text-slate-700">
+            Hide Questions
+          </button>
+        </div>
+      ) : null}
+
       {existingSubmission?.status === "graded" ? (
         <div className="rounded-lg bg-emerald-50 p-4 text-sm text-emerald-800">
           <p className="font-semibold">Score: {resultLabel(existingSubmission, assignment.marks)}</p>
+          <p className="mt-2 text-emerald-700">Graded date: {existingSubmission.graded_at ? new Date(existingSubmission.graded_at).toLocaleDateString("en-GH", { dateStyle: "medium" }) : "Not set"}</p>
           <p className="mt-2">{existingSubmission.feedback || "Quiz submitted."}</p>
         </div>
       ) : null}
-      <button disabled={pending || locked} className="rounded-lg bg-dark px-4 py-3 text-sm font-bold text-white disabled:opacity-60">
-        {pending ? "Submitting..." : locked ? "Quiz Submitted" : "Submit Quiz"}
-      </button>
+      {existingSubmission?.status === "returned" ? (
+        <div className="rounded-lg bg-amber-50 p-4 text-sm text-amber-800">
+          <p className="font-semibold">Returned for revision</p>
+          <p className="mt-2">{existingSubmission.feedback || "Please review and resubmit."}</p>
+        </div>
+      ) : null}
+      {existingSubmission?.status === "submitted" ? (
+        <p className="rounded-lg bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">
+          Submitted. Awaiting grading.
+        </p>
+      ) : null}
     </form>
   );
 }

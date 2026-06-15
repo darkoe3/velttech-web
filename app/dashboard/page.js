@@ -100,6 +100,12 @@ function submissionTypeLabel(value) {
   return labels[value] || "Quiz assessment";
 }
 
+function assignmentActionLabel(assignment) {
+  if (assignment.submission_type === "practical") return "View Practical";
+  if (assignment.status === "graded") return "View Result";
+  return "Take Quiz";
+}
+
 function QuickActions({ role }) {
   const actions = quickActions[role] || quickActions.student;
 
@@ -281,7 +287,7 @@ function StudentDashboard({ dashboard }) {
                         View Assessment
                       </Link>
                       <Link href={`/assignments#assignment-${assignment.id}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-dark px-4 py-2 text-sm font-bold text-white">
-                        Start Quiz
+                        {assignmentActionLabel(assignment)}
                       </Link>
                     </div>
                   </div>

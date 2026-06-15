@@ -25,18 +25,28 @@ function resultLabel(submission) {
   return `${summary} (${letterGrade || "-"} - ${percentage ?? 0}%)`;
 }
 
-export default async function InstructorSubmissionsPage() {
+export default async function InstructorSubmissionsPage({ searchParams }) {
   try {
+    const params = await searchParams;
+    const query = new URLSearchParams();
+    if (params?.assignment) query.set("assignment", params.assignment);
+    if (params?.course) query.set("course", params.course);
+    if (params?.student) query.set("student", params.student);
+    if (params?.status) query.set("status", params.status);
+    const submissionsPath = `/api/instructor/submissions${query.toString() ? `?${query.toString()}` : ""}`;
     const [{ authorized }, submissions] = await Promise.all([
       requireInstructor(),
-      fetchInternalJson("/api/instructor/submissions", "submissions-page"),
+      fetchInternalJson(submissionsPath, "submissions-page"),
     ]);
     if (!authorized) {
       return <section className="mx-auto max-w-7xl px-5 py-10"><ErrorState message="Instructor access is required." /></section>;
     }
     return (
       <section className="mx-auto max-w-7xl px-5 py-10">
-        <SectionHeading title="Assessment Results" description="Review quiz results and practical assessment feedback." />
+        <SectionHeading
+          title={params?.assignment ? "Assessment Results" : "Assessment Results"}
+          description={params?.assignment ? "Review results for the selected assessment." : "Review quiz results and practical assessment feedback."}
+        />
         {submissions.length === 0 ? (
           <EmptyState>No assessment results yet.</EmptyState>
         ) : (

@@ -4,6 +4,8 @@ import { djangoApiFetch, getCurrentUser } from "@/lib/django-api";
 
 const statusStyles = {
   pending: "bg-slate-100 text-slate-700",
+  not_started: "bg-slate-100 text-slate-700",
+  in_progress: "bg-blue-100 text-blue-700",
   submitted: "bg-blue-100 text-blue-700",
   graded: "bg-emerald-100 text-emerald-700",
   returned: "bg-amber-100 text-amber-700",
@@ -16,9 +18,19 @@ const submissionTypeLabels = {
 };
 
 function assignmentStatus(assignment, submission) {
-  if (submission?.status) return submission.status;
+  if (submission?.status === "graded") return "graded";
+  if (submission?.status === "submitted") return "submitted";
+  if (submission?.status === "returned") return "returned";
+  if (submission?.quiz_answers && Object.keys(submission.quiz_answers).length) return "in_progress";
   const dueDate = assignment.due_date ? new Date(`${assignment.due_date}T23:59:59`) : null;
-  return dueDate && dueDate < new Date() ? "overdue" : "pending";
+  return dueDate && dueDate < new Date() ? "overdue" : "not_started";
+}
+
+function assessmentActionLabel(assignment, submission) {
+  if (assignment.submission_type === "practical") return "View Practical";
+  if (submission?.status === "graded") return "View Result";
+  if (submission?.quiz_answers && Object.keys(submission.quiz_answers).length) return "Answer Questions";
+  return "Take Quiz";
 }
 
 function resultLabel(result, fallbackMarks) {
@@ -101,8 +113,8 @@ export default async function AssignmentsPage() {
                         <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusStyles[currentStatus]}`}>
                           {humanize(currentStatus)}
                         </span>
-                        <a href={`#assignment-${assignment.id}`} className="rounded-xl border border-slate-300 px-3 py-1 text-xs font-bold text-dark">
-                          View Assessment
+                        <a href={`#assignment-${assignment.id}`} className="rounded-xl bg-dark px-3 py-1 text-xs font-bold text-white">
+                          {assessmentActionLabel(assignment, submission)}
                         </a>
                       </div>
                       {submission?.status === "graded" ? (
