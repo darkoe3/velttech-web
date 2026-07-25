@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import ScrollToTop from "@/components/ui/ScrollToTop";
@@ -55,6 +56,7 @@ export default function RootLayout({ children }) {
         <Footer />
         <WhatsAppButton />
         <ScrollToTop />
+        <Analytics />
       </body>
     </html>
   );
