@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { BookOpen, CheckCircle2, Clock, CreditCard, DollarSign, Hourglass, ListChecks, Users } from "lucide-react";
 import { djangoApiFetch, getCurrentUser } from "@/lib/django-api";
 import {
@@ -896,6 +897,10 @@ export default async function DashboardPage() {
         <ErrorState message="We could not load your dashboard right now. Please refresh the page or try again shortly." />
       </section>
     );
+  }
+
+  if (user.role === "instructor") {
+    redirect("/instructor/dashboard");
   }
 
   return (
