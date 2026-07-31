@@ -15,7 +15,7 @@ export default async function InstructorAssignmentsPage() {
       fetchInternalJson("/api/instructor/courses", "assignments-page"),
       fetchInternalJson("/api/instructor/enrollments", "assignments-page"),
       fetchInternalJson("/api/instructor/assignments", "assignments-page"),
-      fetchInternalJson("/api/dashboard", "assignments-page"),
+      fetchInternalJson("/api/instructor/dashboard", "assignments-page"),
     ]);
     if (!authorized) {
       return <section className="mx-auto max-w-7xl px-5 py-10"><ErrorState message="Instructor access is required." /></section>;
