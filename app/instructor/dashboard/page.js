@@ -27,6 +27,9 @@ export default async function InstructorDashboardPage() {
       );
     }
 
+    const attendanceSummary = dashboard.attendance_summary || {};
+    const recentAttendance = dashboard.recent_attendance || [];
+
     return (
       <section className="mx-auto max-w-7xl px-5 py-10 sm:px-6 lg:px-8">
         <RoleBadge role={user.role} />
@@ -51,6 +54,36 @@ export default async function InstructorDashboardPage() {
             value={dashboard.active_enrollments}
           />
         </div>
+
+        <section className="mt-8">
+          <SectionHeading
+            title="Attendance"
+            actionHref="/instructor/attendance"
+            actionLabel="View Attendance"
+          />
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
+            <SummaryCard
+              label="Total Attendance Records"
+              value={attendanceSummary.total || 0}
+            />
+            <SummaryCard
+              label="Present"
+              value={attendanceSummary.present || 0}
+            />
+            <SummaryCard
+              label="Absent"
+              value={attendanceSummary.absent || 0}
+            />
+            <SummaryCard
+              label="Late"
+              value={attendanceSummary.late || 0}
+            />
+            <SummaryCard
+              label="Attendance Rate"
+              value={`${attendanceSummary.percentage || 0}%`}
+            />
+          </div>
+        </section>
 
         <div className="mt-8 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <section>
@@ -111,11 +144,55 @@ export default async function InstructorDashboardPage() {
         </div>
 
         <section className="mt-8">
+          <SectionHeading
+            title="Recent Attendance"
+            actionHref="/instructor/attendance"
+            actionLabel="View all"
+          />
+          {recentAttendance.length === 0 ? (
+            <EmptyState>No attendance records have been recorded yet.</EmptyState>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Student</th>
+                    <th className="px-4 py-3">Course</th>
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {recentAttendance.map((record) => (
+                    <tr key={record.id}>
+                      <td className="whitespace-nowrap px-4 py-3 font-semibold text-dark">
+                        {record.student_name}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {record.course_title}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-600">
+                        {formatDate(record.date)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-600">
+                        {humanize(record.status)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section className="mt-8">
           <SectionHeading title="Quick Actions" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               ["My Courses", "/instructor/courses"],
               ["My Students", "/instructor/students"],
+              ["View Attendance", "/instructor/attendance"],
+              ["Assessments", "/instructor/assignments"],
               ["Enrollments", "/instructor/enrollments"],
               ["Certificates", "/instructor/certificates"],
               ["Notifications", "/instructor/notifications"],
