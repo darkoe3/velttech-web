@@ -44,10 +44,11 @@ const adminPortalLinks = [
 
 const instructorPortalLinks = [
   { label: "Dashboard", href: "/instructor/dashboard" },
+  { label: "Students", href: "/instructor/students" },
   { label: "Courses", href: "/instructor/courses" },
+  { label: "Attendance", href: "/instructor/attendance" },
   { label: "Assessments", href: "/instructor/assignments" },
   { label: "Submissions", href: "/instructor/submissions" },
-  { label: "Students", href: "/instructor/students" },
   { label: "Certificates", href: "/instructor/certificates" },
   { label: "Notifications", href: "/instructor/notifications" },
 ];
