@@ -53,12 +53,22 @@ export default function SignupPage() {
     setIsSubmitting(true);
 
     const nameParts = form.full_name.trim().split(/\s+/).filter(Boolean);
+    const honeypotWebsite = form.website.trim();
+    const honeypotCompany = form.company.trim();
     const payload = {
-      ...form,
+      full_name: form.full_name,
       first_name: isAdultLearner ? nameParts[0] || "" : form.first_name,
       last_name: isAdultLearner ? nameParts.slice(1).join(" ") || nameParts[0] || "" : form.last_name,
+      email: form.email,
+      phone_number: form.phone_number,
+      account_type: form.account_type,
+      programme_of_interest: form.programme_of_interest,
+      password: form.password,
+      confirm_password: form.confirm_password,
       role: form.account_type === "adult_learner" ? "student" : "parent",
     };
+    if (honeypotWebsite) payload.website = honeypotWebsite;
+    if (honeypotCompany) payload.company = honeypotCompany;
 
     const res = await fetch("/api/auth/register", {
       method: "POST",
@@ -95,25 +105,25 @@ export default function SignupPage() {
         <h1 className="mt-2 text-3xl font-bold text-dark">Create account</h1>
         <form className="mt-8 grid gap-5 sm:grid-cols-2" onSubmit={handleSubmit}>
           <div className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
-            <label htmlFor="website">Website</label>
             <input
-              id="website"
-              name="website"
+              id="signup-confirmation-token"
+              name="signup_confirmation_token"
               type="text"
               tabIndex={-1}
               autoComplete="off"
+              aria-hidden="true"
               value={form.website}
-              onChange={updateField}
+              onChange={(event) => setForm((current) => ({ ...current, website: event.target.value }))}
             />
-            <label htmlFor="company">Company</label>
             <input
-              id="company"
-              name="company"
+              id="signup-reference-code"
+              name="signup_reference_code"
               type="text"
               tabIndex={-1}
               autoComplete="off"
+              aria-hidden="true"
               value={form.company}
-              onChange={updateField}
+              onChange={(event) => setForm((current) => ({ ...current, company: event.target.value }))}
             />
           </div>
           {isAdultLearner ? (
