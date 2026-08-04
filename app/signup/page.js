@@ -20,7 +20,6 @@ const adultProgrammes = [
 ];
 
 const initialForm = {
-  full_name: "",
   first_name: "",
   last_name: "",
   email: "",
@@ -32,6 +31,30 @@ const initialForm = {
   password: "",
   confirm_password: "",
 };
+
+function extractErrorMessage(data) {
+  if (!data || typeof data !== "object") {
+    return "Unable to create account. Please review your details and try again.";
+  }
+
+  if (typeof data.detail === "string") {
+    return data.detail;
+  }
+
+  if (Array.isArray(data.detail)) {
+    return data.detail.join(" ");
+  }
+
+  const fieldError = Object.entries(data)
+    .filter(([field]) => field !== "detail")
+    .map(([field, value]) => {
+      const message = Array.isArray(value) ? value.join(" ") : value;
+      return message ? `${field.replaceAll("_", " ")}: ${message}` : "";
+    })
+    .find(Boolean);
+
+  return fieldError || "Unable to create account. Please review your details and try again.";
+}
 
 export default function SignupPage() {
   const router = useRouter();
@@ -52,13 +75,11 @@ export default function SignupPage() {
     setSuccess("");
     setIsSubmitting(true);
 
-    const nameParts = form.full_name.trim().split(/\s+/).filter(Boolean);
     const honeypotWebsite = form.website.trim();
     const honeypotCompany = form.company.trim();
     const payload = {
-      full_name: form.full_name,
-      first_name: isAdultLearner ? nameParts[0] || "" : form.first_name,
-      last_name: isAdultLearner ? nameParts.slice(1).join(" ") || nameParts[0] || "" : form.last_name,
+      first_name: form.first_name.trim(),
+      last_name: form.last_name.trim(),
       email: form.email,
       phone_number: form.phone_number,
       account_type: form.account_type,
@@ -70,19 +91,23 @@ export default function SignupPage() {
     if (honeypotWebsite) payload.website = honeypotWebsite;
     if (honeypotCompany) payload.company = honeypotCompany;
 
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json().catch(() => ({}));
+    let res;
+    let data;
+    try {
+      res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      data = await res.json().catch(() => ({}));
+    } catch {
+      setError("Unable to connect to the registration service. Please check your connection and try again.");
+      setIsSubmitting(false);
+      return;
+    }
 
     if (!res.ok) {
-      const firstError =
-        data.detail ||
-        Object.values(data).flat().find(Boolean) ||
-        "Unable to create account.";
-      setError(firstError);
+      setError(extractErrorMessage(data));
       setIsSubmitting(false);
       return;
     }
@@ -104,13 +129,13 @@ export default function SignupPage() {
         </p>
         <h1 className="mt-2 text-3xl font-bold text-dark">Create account</h1>
         <form className="mt-8 grid gap-5 sm:grid-cols-2" onSubmit={handleSubmit}>
-          <div className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+          <div hidden aria-hidden="true">
             <input
               id="signup-confirmation-token"
               name="signup_confirmation_token"
               type="text"
               tabIndex={-1}
-              autoComplete="off"
+              autoComplete="new-password"
               aria-hidden="true"
               value={form.website}
               onChange={(event) => setForm((current) => ({ ...current, website: event.target.value }))}
@@ -120,48 +145,31 @@ export default function SignupPage() {
               name="signup_reference_code"
               type="text"
               tabIndex={-1}
-              autoComplete="off"
+              autoComplete="new-password"
               aria-hidden="true"
               value={form.company}
               onChange={(event) => setForm((current) => ({ ...current, company: event.target.value }))}
             />
           </div>
-          {isAdultLearner ? (
-            <div className="sm:col-span-2">
-              <label htmlFor="full_name" className="text-sm font-semibold text-slate-700">
-                Full name
+          {[
+            ["first_name", "First Name", "text"],
+            ["last_name", "Last Name", "text"],
+          ].map(([name, label, type]) => (
+            <div key={name}>
+              <label htmlFor={name} className="text-sm font-semibold text-slate-700">
+                {label}
               </label>
               <input
-                id="full_name"
-                name="full_name"
-                type="text"
+                id={name}
+                name={name}
+                type={type}
                 required
-                value={form.full_name}
+                value={form[name]}
                 onChange={updateField}
                 className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/20"
               />
             </div>
-          ) : (
-            [
-              ["first_name", "First name", "text"],
-              ["last_name", "Last name", "text"],
-            ].map(([name, label, type]) => (
-              <div key={name}>
-                <label htmlFor={name} className="text-sm font-semibold text-slate-700">
-                  {label}
-                </label>
-                <input
-                  id={name}
-                  name={name}
-                  type={type}
-                  required
-                  value={form[name]}
-                  onChange={updateField}
-                  className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/20"
-                />
-              </div>
-            ))
-          )}
+          ))}
           {[
             ["email", "Email", "email"],
             ["phone_number", "Phone number", "tel"],
