@@ -157,7 +157,48 @@ function NotificationsPreview({ notifications }) {
   );
 }
 
-function StudentDashboard({ dashboard }) {
+function ResultSummaries({ results = [] }) {
+  if (!results.length) return null;
+  return (
+    <section className="mt-8">
+      <SectionHeading title="Final Results" />
+      <div className="grid gap-4 xl:grid-cols-2">
+        {results.map((result) => (
+          <AcademyCard key={result.id}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-dark">{result.course_title}</h3>
+                <p className="mt-1 text-sm text-slate-600">{result.student_name}</p>
+              </div>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusPillClass(result.status)}`}>
+                {statusLabel(result.status)}
+              </span>
+            </div>
+            <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+              <div className="rounded-xl bg-slate-50 px-4 py-3"><dt className="font-semibold text-slate-500">Practical</dt><dd className="mt-1 font-bold text-dark">{result.practical_score ?? "Not set"} / {result.practical_max_score}</dd></div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3"><dt className="font-semibold text-slate-500">Final Project</dt><dd className="mt-1 font-bold text-dark">{result.final_project_score ?? "Not set"} / {result.final_project_max_score}</dd></div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3"><dt className="font-semibold text-slate-500">Objective Quiz</dt><dd className="mt-1 font-bold text-dark">{result.objective_quiz_score ?? "Not set"} / {result.objective_quiz_max_score}</dd></div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3"><dt className="font-semibold text-slate-500">Overall</dt><dd className="mt-1 font-bold text-dark">{result.overall_score} ({result.percentage}%)</dd></div>
+            </dl>
+            {result.final_project_feedback ? <p className="mt-4 text-sm text-slate-600">{result.final_project_feedback}</p> : null}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+              <p className="text-sm font-semibold text-slate-600">
+                Certificate: {result.certificate_number ? `Issued (${result.certificate_number})` : "Not issued"}
+              </p>
+              {result.certificate_id ? (
+                <Link href={`/api/certificates/${result.certificate_id}/download`} className="inline-flex min-h-10 items-center rounded-xl bg-dark px-4 py-2 text-sm font-bold text-white">
+                  Download Certificate
+                </Link>
+              ) : null}
+            </div>
+          </AcademyCard>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StudentDashboard({ dashboard, assessmentResults = [] }) {
   const courses = dashboard.courses || [];
   const notifications = dashboard.notifications || [];
   const attendanceSummary = dashboard.attendance_summary || {};
@@ -319,6 +360,8 @@ function StudentDashboard({ dashboard }) {
         </section>
       </div>
 
+      <ResultSummaries results={assessmentResults} />
+
       <div className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <section>
           <SectionHeading title="Payments" />
@@ -424,7 +467,7 @@ function StudentDashboard({ dashboard }) {
   );
 }
 
-function ParentDashboard({ dashboard }) {
+function ParentDashboard({ dashboard, assessmentResults = [] }) {
   const children = dashboard.children || [];
   const notifications = dashboard.notifications || [];
   const recentPayments = dashboard.recent_payments || [];
@@ -575,6 +618,7 @@ function ParentDashboard({ dashboard }) {
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
+        <ResultSummaries results={assessmentResults} />
         <section>
           <SectionHeading title="Child Attendance Summary" />
           {children.length === 0 ? (
@@ -884,9 +928,13 @@ function InstructorDashboard({ dashboard }) {
 export default async function DashboardPage() {
   let user;
   let dashboard;
+  let assessmentResults = [];
 
   try {
     [user, dashboard] = await Promise.all([getCurrentUser(), djangoApiFetch("dashboard")]);
+    if (user.role === "student" || user.role === "parent") {
+      assessmentResults = await djangoApiFetch("my-assessment-results");
+    }
   } catch (error) {
     if (error?.digest?.startsWith("NEXT_REDIRECT")) {
       throw error;
@@ -912,8 +960,8 @@ export default async function DashboardPage() {
       <h1 className="mt-4 text-3xl font-bold text-dark">Welcome, {user.first_name}</h1>
 
       <div className="mt-8">
-        {user.role === "student" ? <StudentDashboard dashboard={dashboard} /> : null}
-        {user.role === "parent" ? <ParentDashboard dashboard={dashboard} /> : null}
+        {user.role === "student" ? <StudentDashboard dashboard={dashboard} assessmentResults={assessmentResults} /> : null}
+        {user.role === "parent" ? <ParentDashboard dashboard={dashboard} assessmentResults={assessmentResults} /> : null}
         {user.role === "admin" ? <AdminDashboard dashboard={dashboard} /> : null}
         {user.role === "instructor" ? <InstructorDashboard dashboard={dashboard} /> : null}
       </div>

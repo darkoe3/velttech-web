@@ -1,4 +1,5 @@
 import { AssignmentForm, InstructorAssignmentActions, PracticalGradeForm } from "@/components/assignments/AssignmentForms";
+import CombinedResults from "@/components/assignments/CombinedResults";
 import { AcademyCard, EmptyState, ErrorState, SectionHeading, formatDate, humanize } from "@/components/ui/academy";
 import { fetchInternalJson } from "@/lib/instructor-page-fetch";
 import { requireInstructor } from "@/lib/instructor";
@@ -10,12 +11,14 @@ const submissionTypeLabels = {
 
 export default async function InstructorAssignmentsPage() {
   try {
-    const [{ user, authorized }, courses, enrollments, assignments, dashboard] = await Promise.all([
+    const [{ user, authorized }, courses, enrollments, assignments, dashboard, assessmentResults, gradedSubmissions] = await Promise.all([
       requireInstructor(),
       fetchInternalJson("/api/instructor/courses", "assignments-page"),
       fetchInternalJson("/api/instructor/enrollments", "assignments-page"),
       fetchInternalJson("/api/instructor/assignments", "assignments-page"),
       fetchInternalJson("/api/instructor/dashboard", "assignments-page"),
+      fetchInternalJson("/api/instructor/assessment-results", "assignments-page"),
+      fetchInternalJson("/api/instructor/submissions?status=graded", "assignments-page"),
     ]);
     if (!authorized) {
       return <section className="mx-auto max-w-7xl px-5 py-10"><ErrorState message="Instructor access is required." /></section>;
@@ -83,6 +86,10 @@ export default async function InstructorAssignmentsPage() {
             )}
           </section>
         </div>
+        <section className="mt-10">
+          <SectionHeading title="Combined Results" description="Manage objective quizzes, practical scores, final projects, approvals, and manual certificate issue." />
+          <CombinedResults results={assessmentResults} submissions={gradedSubmissions} />
+        </section>
       </section>
     );
   } catch (error) {
