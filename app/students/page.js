@@ -1,5 +1,8 @@
-import { djangoApiFetch } from "@/lib/django-api";
 import StudentFilters from "@/components/admin/StudentFilters";
+import { ErrorState } from "@/components/ui/academy";
+import { fetchInternalJson } from "@/lib/instructor-page-fetch";
+
+export const dynamic = "force-dynamic";
 
 function fullName(person) {
   return [person?.first_name, person?.other_name, person?.last_name]
@@ -8,7 +11,26 @@ function fullName(person) {
 }
 
 export default async function StudentsPage() {
-  const students = await djangoApiFetch("students");
+  let students = [];
+  try {
+    students = await fetchInternalJson("/api/admin/students", "admin-students-page");
+  } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+    console.error("[admin-students-page] failed to load students", {
+      endpoint: "/api/admin/students",
+      message: error?.message,
+    });
+    return (
+      <section className="mx-auto max-w-7xl px-5 py-10 sm:px-6 lg:px-8">
+        <ErrorState
+          title="Students could not load"
+          message="The students list is temporarily unavailable. The technical details were logged for support."
+        />
+      </section>
+    );
+  }
 
   return (
     <section className="mx-auto max-w-7xl px-5 py-10 sm:px-6 lg:px-8">

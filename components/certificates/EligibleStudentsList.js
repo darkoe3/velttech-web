@@ -1,22 +1,33 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { certificateApi } from '@/lib/certificate-api';
 import { AlertCircle, Loader } from 'lucide-react';
 import IssueCertificateForm from './IssueCertificateForm';
 
 export default function EligibleStudentsList({ courseId, onCertificateIssued }) {
   const [students, setStudents] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
+
+  const applyEligibleStudentsResponse = useCallback((data) => {
+    if (Array.isArray(data)) {
+      setStudents(data);
+      setSummary(null);
+      return;
+    }
+    setStudents(data?.eligible_students || []);
+    setSummary(data?.summary || null);
+  }, []);
 
   useEffect(() => {
     const fetchEligibleStudents = async () => {
       try {
         setLoading(true);
         const data = await certificateApi.getEligibleStudents(courseId);
-        setStudents(data);
+        applyEligibleStudentsResponse(data);
       } catch (err) {
         setError('Failed to load eligible students');
       } finally {
@@ -27,14 +38,14 @@ export default function EligibleStudentsList({ courseId, onCertificateIssued }) 
     if (courseId) {
       fetchEligibleStudents();
     }
-  }, [courseId]);
+  }, [courseId, applyEligibleStudentsResponse]);
 
   const handleRefresh = () => {
     setSelectedStudent(null);
     const fetchEligibleStudents = async () => {
       try {
         const data = await certificateApi.getEligibleStudents(courseId);
-        setStudents(data);
+        applyEligibleStudentsResponse(data);
       } catch (err) {
         console.error('Failed to refresh');
       }
@@ -63,8 +74,23 @@ export default function EligibleStudentsList({ courseId, onCertificateIssued }) 
       )}
 
       {students.length === 0 ? (
-        <div className="bg-blue-50 p-4 rounded text-center text-blue-700">
-          No eligible students found. Ensure students have completed their enrollment and all payments are settled.
+        <div className="bg-blue-50 p-4 rounded text-blue-700">
+          <p className="text-center">
+            No learners are currently eligible for certificates. A learner must have a completed enrollment, settled payments, a complete passing assessment result, and instructor/admin approval.
+          </p>
+          {summary?.blockers?.length ? (
+            <div className="mt-4 rounded border border-blue-100 bg-white/70 p-3 text-sm text-blue-900">
+              <p className="font-semibold">Current blockers</p>
+              <ul className="mt-2 grid gap-1 sm:grid-cols-2">
+                {summary.blockers.map((blocker) => (
+                  <li key={blocker.code} className="flex justify-between gap-3">
+                    <span>{blocker.label}</span>
+                    <span className="font-semibold">{blocker.count}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       ) : (
         <div>
