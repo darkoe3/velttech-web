@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 function formatValue(value) {
@@ -40,8 +40,10 @@ function ScoreForm({ result, type }) {
   const [pending, setPending] = useState(false);
   const locked = result.status === "certificate_issued" || result.is_approved;
   const isPractical = type === "practical";
-  const scoreName = isPractical ? "practical_score" : "final_project_score";
-  const maxScore = isPractical ? result.practical_max_score : result.final_project_max_score;
+  const isObjective = type === "objective";
+  const scoreName = isPractical ? "practical_score" : isObjective ? "objective_quiz_score" : "final_project_score";
+  const maxScore = isPractical ? result.practical_max_score : isObjective ? result.objective_quiz_max_score : result.final_project_max_score;
+  const title = isPractical ? "Practical Assignment" : isObjective ? "Objective Quiz Score" : "Final Project";
 
   async function save(event) {
     event.preventDefault();
@@ -52,14 +54,14 @@ function ScoreForm({ result, type }) {
       return;
     }
     if (score > Number(maxScore)) {
-      setError("Score cannot exceed maximum.");
+      setError(`${title} cannot exceed ${formatValue(maxScore)}.`);
       return;
     }
     setPending(true);
     setError("");
     try {
       const payload = { [scoreName]: score };
-      if (!isPractical) payload.final_project_feedback = form.get("final_project_feedback") || "";
+      if (!isPractical && !isObjective) payload.final_project_feedback = form.get("final_project_feedback") || "";
       await requestJson(`/api/instructor/assessment-results/${result.id}`, "PATCH", payload);
       router.refresh();
     } catch (err) {
@@ -74,6 +76,11 @@ function ScoreForm({ result, type }) {
       <div>
         <p className="font-bold text-dark">{result.student_name}</p>
         <p className="text-sm text-slate-600">{result.course_title}</p>
+        {isObjective ? (
+          <p className="mt-1 text-sm font-semibold text-slate-500">
+            Objective Quiz: {formatValue(result.objective_quiz_score)} / {formatValue(result.objective_quiz_max_score)}
+          </p>
+        ) : null}
       </div>
       {error ? <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
       <div className="grid gap-3 sm:grid-cols-[0.5fr_0.5fr_auto]">
@@ -95,7 +102,7 @@ function ScoreForm({ result, type }) {
           {pending ? "Saving..." : "Save"}
         </button>
       </div>
-      {!isPractical ? (
+      {!isPractical && !isObjective ? (
         <textarea
           name="final_project_feedback"
           disabled={locked}
@@ -129,12 +136,18 @@ function QuizImport({ result, submissions }) {
       setError("Select a graded objective quiz.");
       return;
     }
+    const payload = { submission_id: Number(submissionId) };
+    if (result.objective_quiz_score !== null && result.objective_quiz_score !== undefined) {
+      const replace = window.confirm(
+        `An objective score of ${formatValue(result.objective_quiz_score)} / ${formatValue(result.objective_quiz_max_score)} has already been entered. Replace it with the imported quiz score?`,
+      );
+      if (!replace) return;
+      payload.replace_existing = true;
+    }
     setPending(true);
     setError("");
     try {
-      await requestJson(`/api/instructor/assessment-results/${result.id}/import-quiz-score`, "POST", {
-        submission_id: Number(submissionId),
-      });
+      await requestJson(`/api/instructor/assessment-results/${result.id}/import-quiz-score`, "POST", payload);
       router.refresh();
     } catch (err) {
       setError(err.message);
@@ -172,7 +185,7 @@ function QuizImport({ result, submissions }) {
         </div>
       ) : (
         <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600">
-          No graded objective quiz is available for this learner.
+          No graded online quiz is available. You may enter the objective score manually.
         </p>
       )}
     </div>
@@ -200,11 +213,6 @@ export default function CombinedResults({ results = [], submissions = [] }) {
       mounted = false;
     };
   }, [results]);
-
-  const incompleteObjectiveResults = useMemo(
-    () => results.filter((result) => result.objective_quiz_score === null || result.objective_quiz_score === undefined),
-    [results],
-  );
 
   async function approve(result) {
     if (!window.confirm("Approve this learner's final result?\nAfter approval, score changes may require administrative review.")) return;
@@ -245,10 +253,13 @@ export default function CombinedResults({ results = [], submissions = [] }) {
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="text-lg font-bold text-dark">Objective Quizzes</h2>
+        <h2 className="text-lg font-bold text-dark">Objective Quiz</h2>
         <div className="mt-4 grid gap-4">
-          {(incompleteObjectiveResults.length ? incompleteObjectiveResults : results).map((result) => (
-            <QuizImport key={result.id} result={result} submissions={submissions} />
+          {results.map((result) => (
+            <div key={result.id} className="grid gap-4 xl:grid-cols-2">
+              <ScoreForm result={result} type="objective" />
+              <QuizImport result={result} submissions={submissions} />
+            </div>
           ))}
         </div>
       </section>
