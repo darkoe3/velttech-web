@@ -146,7 +146,7 @@ function QuestionEditor({ questions, setQuestions }) {
   );
 }
 
-export function AssignmentForm({ courses, enrollments = [], instructors = [], allowInstructorSelect = false }) {
+export function AssignmentForm({ courses, enrollments = [], instructors = [], allowInstructorSelect = false, quizOnly = false }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -160,6 +160,7 @@ export function AssignmentForm({ courses, enrollments = [], instructors = [], al
     const form = new FormData(formElement);
     const targetStudent = form.get("target_student");
     const marks = form.get("marks");
+    const submissionType = quizOnly ? "quiz" : assessmentType;
     setPending(true);
     setError("");
     try {
@@ -168,11 +169,11 @@ export function AssignmentForm({ courses, enrollments = [], instructors = [], al
         title: form.get("title"),
         description: form.get("description"),
         due_date: form.get("due_date"),
-        submission_type: assessmentType,
+        submission_type: submissionType,
         target_student: targetStudent ? Number(targetStudent) : null,
         marks: marks ? Number(marks) : null,
         is_active: true,
-        questions: assessmentType === "quiz" ? questions : [],
+        questions: submissionType === "quiz" ? questions : [],
       };
       if (allowInstructorSelect && form.get("instructor")) {
         payload.instructor = Number(form.get("instructor"));
@@ -223,25 +224,30 @@ export function AssignmentForm({ courses, enrollments = [], instructors = [], al
       <textarea name="description" required placeholder="Instructions" className="min-h-32 w-full rounded-lg border border-slate-300 px-4 py-3" />
       <div className="grid gap-4 sm:grid-cols-3">
         <input name="due_date" type="date" required className="rounded-lg border border-slate-300 px-4 py-3" />
-        <select value={assessmentType} onChange={(event) => setAssessmentType(event.target.value)} className="rounded-lg border border-slate-300 px-4 py-3">
-          <option value="quiz">Quiz assessment</option>
-          <option value="practical">Practical assessment</option>
-        </select>
+        {quizOnly ? (
+          <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">Quiz assessment</div>
+        ) : (
+          <select value={assessmentType} onChange={(event) => setAssessmentType(event.target.value)} className="rounded-lg border border-slate-300 px-4 py-3">
+            <option value="quiz">Quiz assessment</option>
+            <option value="practical">Practical assessment</option>
+          </select>
+        )}
         <input name="marks" type="number" min="1" max="100" placeholder="Max score" className="rounded-lg border border-slate-300 px-4 py-3" />
       </div>
-      {assessmentType === "quiz" ? <QuestionEditor questions={questions} setQuestions={setQuestions} /> : null}
+      {(quizOnly || assessmentType === "quiz") ? <QuestionEditor questions={questions} setQuestions={setQuestions} /> : null}
       <button disabled={pending} className="rounded-lg bg-dark px-4 py-3 text-sm font-bold text-white disabled:opacity-60">
-        {pending ? "Publishing..." : "Create Assessment"}
+        {pending ? "Publishing..." : quizOnly ? "Create Quiz" : "Create Assessment"}
       </button>
     </form>
   );
 }
 
-export function InstructorAssignmentActions({ assignment, courses, enrollments = [], allowInstructorSelect = false, instructors = [] }) {
+export function InstructorAssignmentActions({ assignment, courses, enrollments = [], allowInstructorSelect = false, instructors = [], quizOnly = false }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
   const [selectedCourse, setSelectedCourse] = useState(String(assignment.course || ""));
   const [assessmentType, setAssessmentType] = useState(assignment.submission_type || "quiz");
   const [questions, setQuestions] = useState(normalizeQuestions(assignment.questions));
@@ -251,6 +257,7 @@ export function InstructorAssignmentActions({ assignment, courses, enrollments =
     const form = new FormData(event.currentTarget);
     const targetStudent = form.get("target_student");
     const marks = form.get("marks");
+    const submissionType = quizOnly ? "quiz" : assessmentType;
     setPending(true);
     setError("");
     try {
@@ -259,10 +266,10 @@ export function InstructorAssignmentActions({ assignment, courses, enrollments =
         title: form.get("title"),
         description: form.get("description"),
         due_date: form.get("due_date"),
-        submission_type: assessmentType,
+        submission_type: submissionType,
         target_student: targetStudent ? Number(targetStudent) : null,
         marks: marks ? Number(marks) : null,
-        questions: assessmentType === "quiz" ? questions : [],
+        questions: submissionType === "quiz" ? questions : [],
         is_active: true,
         ...(allowInstructorSelect && form.get("instructor") ? { instructor: Number(form.get("instructor")) } : {}),
       });
@@ -289,16 +296,42 @@ export function InstructorAssignmentActions({ assignment, courses, enrollments =
     }
   }
 
+  async function handleShareLink() {
+    setPending(true);
+    setError("");
+    setShareMessage("");
+    try {
+      const data = await requestJson(`/api/instructor/assessments/${assignment.id}/generate-link`, "POST");
+      const shareUrl = data.share_url || "";
+      if (shareUrl && navigator?.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareMessage("Share link copied.");
+      } else {
+        setShareMessage(shareUrl || "Share link generated.");
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
     <div className="mt-5">
       <ErrorMessage error={error} />
+      {shareMessage ? <p className="mt-3 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{shareMessage}</p> : null}
       <div className="mt-3 flex flex-wrap gap-2">
         <Link href={`/instructor/submissions?assignment=${assignment.id}`} className="inline-flex min-h-10 items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
-          View
+          View Submissions
         </Link>
         <button type="button" onClick={() => setEditing(true)} className="inline-flex min-h-10 items-center rounded-lg bg-secondary px-4 py-2 text-sm font-bold text-white">
           Edit
         </button>
+        {assignment.submission_type === "quiz" && !allowInstructorSelect ? (
+          <button type="button" onClick={handleShareLink} disabled={pending} className="inline-flex min-h-10 items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-dark disabled:opacity-60">
+            Share Link
+          </button>
+        ) : null}
         <button type="button" onClick={handleDelete} disabled={pending} className="inline-flex min-h-10 items-center rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
           Delete
         </button>
@@ -336,13 +369,17 @@ export function InstructorAssignmentActions({ assignment, courses, enrollments =
             <textarea name="description" required defaultValue={assignment.description} placeholder="Instructions" className="min-h-32 w-full rounded-lg border border-slate-300 px-4 py-3" />
             <div className="grid gap-4 sm:grid-cols-3">
               <input name="due_date" type="date" required defaultValue={assignment.due_date} className="rounded-lg border border-slate-300 px-4 py-3" />
-              <select value={assessmentType} onChange={(event) => setAssessmentType(event.target.value)} className="rounded-lg border border-slate-300 px-4 py-3">
-                <option value="quiz">Quiz assessment</option>
-                <option value="practical">Practical assessment</option>
-              </select>
+              {quizOnly ? (
+                <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">Quiz assessment</div>
+              ) : (
+                <select value={assessmentType} onChange={(event) => setAssessmentType(event.target.value)} className="rounded-lg border border-slate-300 px-4 py-3">
+                  <option value="quiz">Quiz assessment</option>
+                  <option value="practical">Practical assessment</option>
+                </select>
+              )}
               <input name="marks" type="number" min="1" max="100" defaultValue={assignment.marks ?? ""} placeholder="Max score" className="rounded-lg border border-slate-300 px-4 py-3" />
             </div>
-            {assessmentType === "quiz" ? <QuestionEditor questions={questions} setQuestions={setQuestions} /> : null}
+            {(quizOnly || assessmentType === "quiz") ? <QuestionEditor questions={questions} setQuestions={setQuestions} /> : null}
             <div className="flex flex-wrap gap-3">
               <button disabled={pending} className="rounded-lg bg-dark px-4 py-3 text-sm font-bold text-white disabled:opacity-60">{pending ? "Saving..." : "Save Changes"}</button>
               <button type="button" onClick={() => setEditing(false)} className="rounded-lg border border-slate-300 px-4 py-3 text-sm font-bold text-dark">Cancel</button>

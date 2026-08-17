@@ -1,4 +1,4 @@
-import { AssignmentForm, InstructorAssignmentActions, PracticalGradeForm } from "@/components/assignments/AssignmentForms";
+import { AssignmentForm, InstructorAssignmentActions } from "@/components/assignments/AssignmentForms";
 import CombinedResults from "@/components/assignments/CombinedResults";
 import { AcademyCard, EmptyState, ErrorState, SectionHeading, formatDate, humanize } from "@/components/ui/academy";
 import { fetchInternalJson } from "@/lib/instructor-page-fetch";
@@ -23,25 +23,27 @@ export default async function InstructorAssignmentsPage() {
     if (!authorized) {
       return <section className="mx-auto max-w-7xl px-5 py-10"><ErrorState message="Instructor access is required." /></section>;
     }
+    const quizAssignments = assignments.filter((assignment) => assignment.submission_type === "quiz");
     return (
       <section className="mx-auto max-w-7xl px-5 py-10">
         <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
           <AcademyCard>
-            <SectionHeading title="Create Assessment" description="Publish a quiz or practical assessment for a course group or selected learner." />
+            <SectionHeading title="Create Quiz" description="Publish an online objective quiz for a course group or selected learner." />
             <AssignmentForm
               courses={courses}
               enrollments={enrollments}
               instructors={dashboard.instructors || []}
               allowInstructorSelect={user.role === "admin"}
+              quizOnly
             />
           </AcademyCard>
           <section>
-            <SectionHeading title="Assessments" />
-            {assignments.length === 0 ? (
-              <EmptyState>No assessments yet.</EmptyState>
+            <SectionHeading title="Objective Quizzes" />
+            {quizAssignments.length === 0 ? (
+              <EmptyState>No objective quizzes yet.</EmptyState>
             ) : (
               <div className="space-y-4">
-                {assignments.map((assignment) => (
+                {quizAssignments.map((assignment) => (
                   <AcademyCard key={assignment.id}>
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
@@ -77,9 +79,9 @@ export default async function InstructorAssignmentsPage() {
                       courses={courses}
                       enrollments={enrollments}
                       instructors={dashboard.instructors || []}
-                      allowInstructorSelect={user.role === "admin"}
-                    />
-                    <PracticalGradeForm assignment={assignment} enrollments={enrollments} />
+                        allowInstructorSelect={user.role === "admin"}
+                        quizOnly
+                      />
                   </AcademyCard>
                 ))}
               </div>
@@ -87,8 +89,8 @@ export default async function InstructorAssignmentsPage() {
           </section>
         </div>
         <section className="mt-10">
-          <SectionHeading title="Combined Results" description="Manage objective quizzes, practical scores, final projects, approvals, and manual certificate issue." />
-          <CombinedResults results={assessmentResults} submissions={gradedSubmissions} />
+          <SectionHeading title="Assessment Results" description="Enter practical, final project, and objective scores together, then approve and issue certificates when eligible." />
+          <CombinedResults results={assessmentResults} submissions={gradedSubmissions} userRole={user.role} />
         </section>
       </section>
     );
