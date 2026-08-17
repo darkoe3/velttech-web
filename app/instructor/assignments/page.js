@@ -79,9 +79,9 @@ export default async function InstructorAssignmentsPage() {
                       courses={courses}
                       enrollments={enrollments}
                       instructors={dashboard.instructors || []}
-                        allowInstructorSelect={user.role === "admin"}
-                        quizOnly
-                      />
+                      allowInstructorSelect={user.role === "admin"}
+                      quizOnly
+                    />
                   </AcademyCard>
                 ))}
               </div>
@@ -90,7 +90,7 @@ export default async function InstructorAssignmentsPage() {
         </div>
         <section className="mt-10">
           <SectionHeading title="Assessment Results" description="Enter practical, final project, and objective scores together, then approve and issue certificates when eligible." />
-          <CombinedResults results={assessmentResults} submissions={gradedSubmissions} userRole={user.role} />
+          <CombinedResults courses={courses} results={assessmentResults} submissions={gradedSubmissions} userRole={user.role} />
         </section>
       </section>
     );

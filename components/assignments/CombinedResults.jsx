@@ -118,7 +118,7 @@ function CertificateState({ result, eligibility, canReissue, onReissue, pending 
   return <p className="text-xs font-semibold text-slate-600">{reason}</p>;
 }
 
-export default function CombinedResults({ results = [], submissions = [], userRole = "instructor" }) {
+export default function CombinedResults({ courses = [], results = [], submissions = [], userRole = "instructor" }) {
   const router = useRouter();
   const [resultOverrides, setResultOverrides] = useState({});
   const [drafts, setDrafts] = useState({});
@@ -135,25 +135,43 @@ export default function CombinedResults({ results = [], submissions = [], userRo
     [results, resultOverrides],
   );
 
-  const courses = useMemo(() => {
+  const assignedCourses = useMemo(() => {
     const courseMap = new Map();
+    courses.forEach((course) => {
+      courseMap.set(String(course.id), course.title);
+    });
     localResults.forEach((result) => {
-      courseMap.set(String(result.course_id), result.course_title);
+      if (!courseMap.has(String(result.course_id))) {
+        courseMap.set(String(result.course_id), result.course_title);
+      }
     });
     return [...courseMap.entries()].map(([id, title]) => ({ id, title }));
-  }, [localResults]);
+  }, [courses, localResults]);
 
-  const activeCourse = selectedCourse || courses[0]?.id || "";
+  const courseResults = useMemo(
+    () => localResults.filter((result) => selectedCourse && String(result.course_id) === String(selectedCourse)),
+    [localResults, selectedCourse],
+  );
+
+  const selectedCourseSummary = useMemo(() => {
+    if (!selectedCourse) return null;
+    const course = assignedCourses.find((item) => String(item.id) === String(selectedCourse));
+    const passMark = courseResults.find((result) => result.pass_mark !== null && result.pass_mark !== undefined)?.pass_mark;
+    return {
+      title: course?.title || courseResults[0]?.course_title || "Selected course",
+      learnerCount: courseResults.length,
+      passMark,
+    };
+  }, [assignedCourses, courseResults, selectedCourse]);
 
   const visibleResults = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return localResults.filter((result) => {
-      const matchesCourse = !activeCourse || String(result.course_id) === String(activeCourse);
+    return courseResults.filter((result) => {
       const matchesSearch = !query || result.student_name.toLowerCase().includes(query);
       const matchesStatus = statusFilter === "all" || result.status === statusFilter;
-      return matchesCourse && matchesSearch && matchesStatus;
+      return matchesSearch && matchesStatus;
     });
-  }, [localResults, search, activeCourse, statusFilter]);
+  }, [courseResults, search, statusFilter]);
 
   const visibleKey = visibleResults.map((result) => result.id).join(",");
 
@@ -364,8 +382,9 @@ export default function CombinedResults({ results = [], submissions = [], userRo
       <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 lg:grid-cols-[1.2fr_1fr_0.8fr]">
         <label className="text-sm font-semibold text-slate-700">
           <span className="mb-1 block">Select Course</span>
-          <select value={activeCourse} onChange={(event) => setSelectedCourse(event.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2">
-            {courses.map((course) => (
+          <select value={selectedCourse} onChange={(event) => setSelectedCourse(event.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2">
+            <option value="">Select a course</option>
+            {assignedCourses.map((course) => (
               <option key={course.id} value={course.id}>{course.title}</option>
             ))}
           </select>
@@ -386,10 +405,31 @@ export default function CombinedResults({ results = [], submissions = [], userRo
         </label>
       </div>
 
-      {visibleResults.length === 0 ? (
+      {!selectedCourse ? (
+        <p className="rounded-lg bg-white px-4 py-3 text-sm text-slate-600">Select a course to view and enter learner assessment scores.</p>
+      ) : null}
+
+      {selectedCourseSummary ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm">
+          <p className="font-bold text-dark">{selectedCourseSummary.title}</p>
+          <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">
+            {selectedCourseSummary.learnerCount} {selectedCourseSummary.learnerCount === 1 ? "learner" : "learners"}
+          </span>
+          <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">
+            Pass mark: {selectedCourseSummary.passMark === undefined ? "Not set" : `${formatValue(selectedCourseSummary.passMark)}%`}
+          </span>
+        </div>
+      ) : null}
+
+      {selectedCourse && courseResults.length === 0 ? (
+        <p className="rounded-lg bg-white px-4 py-3 text-sm text-slate-600">No learners are currently assigned to this course.</p>
+      ) : null}
+
+      {selectedCourse && courseResults.length > 0 && visibleResults.length === 0 ? (
         <p className="rounded-lg bg-white px-4 py-3 text-sm text-slate-600">No learners match the selected filters.</p>
       ) : null}
 
+      {selectedCourse && visibleResults.length > 0 ? (
       <div className="hidden overflow-x-auto rounded-lg border border-slate-200 bg-white lg:block">
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
@@ -482,7 +522,9 @@ export default function CombinedResults({ results = [], submissions = [], userRo
           </tbody>
         </table>
       </div>
+      ) : null}
 
+      {selectedCourse && visibleResults.length > 0 ? (
       <div className="space-y-4 lg:hidden">
         {visibleResults.map((result) => {
           const draft = drafts[result.id] || draftFromResult(result);
@@ -557,6 +599,7 @@ export default function CombinedResults({ results = [], submissions = [], userRo
           );
         })}
       </div>
+      ) : null}
     </div>
   );
 }
