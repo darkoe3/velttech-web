@@ -122,9 +122,12 @@ export default function IssueCertificateForm({ enrollmentId, courseId, studentNa
       <div className="bg-blue-50 p-4 rounded mb-4 text-sm text-blue-700">
         <p className="font-semibold mb-2">Requirements:</p>
         <ul className="list-disc list-inside space-y-1">
-          <li>Enrollment must be marked as completed</li>
-          <li>Student must be approved</li>
-          <li>All payments must be settled</li>
+          <li>Enrollment must be completed</li>
+          <li>Learner account must be approved</li>
+          <li>Payments must be settled</li>
+          <li>Assessment result must be complete and pass the course mark</li>
+          <li>Result must be approved by an instructor or admin</li>
+          <li>No existing certificate should require reissue</li>
         </ul>
       </div>
 
