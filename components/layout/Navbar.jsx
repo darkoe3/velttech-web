@@ -17,7 +17,7 @@ const primaryLinks = [
 const studentPortalLinks = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "My Courses", href: "/my-courses" },
-  { label: "Resources", href: "/resources" },
+  { label: "Resources", href: "/instructor/resources" },
   { label: "Assessments", href: "/assignments" },
   { label: "Payments", href: "/payments" },
   { label: "Certificates", href: "/my-certificates" },
