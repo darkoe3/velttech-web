@@ -192,6 +192,7 @@ export default async function InstructorDashboardPage() {
               ["My Courses", "/instructor/courses"],
               ["My Students", "/instructor/students"],
               ["View Attendance", "/instructor/attendance"],
+              ["Resources", "/instructor/resources"],
               ["Assessments", "/instructor/assignments"],
               ["Enrollments", "/instructor/enrollments"],
               ["Certificates", "/instructor/certificates"],

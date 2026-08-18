@@ -29,12 +29,14 @@ const quickActions = {
   parent: [
     { title: "Add Child", description: "Create a child profile for admin review.", href: "/my-children/new" },
     { title: "My Courses", description: "Review your children’s enrolled courses.", href: "/my-courses" },
+    { title: "Learning Resources", description: "Open shared links and notes for your children.", href: "/resources" },
     { title: "My Children", description: "Review children and assigned courses.", href: "/my-children" },
     { title: "Payments", description: "Review payment history and printable receipts.", href: "/payments" },
     { title: "Certificates", description: "View certificates issued for your children.", href: "/my-certificates" },
   ],
   student: [
     { title: "My Courses", description: "Open your enrolled courses.", href: "/my-courses" },
+    { title: "Learning Resources", description: "Open shared links and class notes.", href: "/resources" },
     { title: "Assessments", description: "Take quizzes and review practical grades.", href: "/assignments" },
     { title: "Attendance", description: "Track your class attendance records.", href: "/my-attendance" },
     { title: "Progress", description: "Read instructor feedback and progress updates.", href: "/my-progress" },
@@ -44,6 +46,7 @@ const quickActions = {
   ],
   instructor: [
     { title: "Attendance", description: "Record class attendance.", href: "/instructor/attendance" },
+    { title: "Learning Resources", description: "Share links and notes with learners.", href: "/instructor/resources" },
     { title: "Lesson Notes", description: "Document what was covered in class.", href: "/instructor/lesson-notes" },
     { title: "Progress Reports", description: "Update student progress.", href: "/instructor/progress" },
     { title: "Assessments", description: "Create quizzes and grade practical work.", href: "/instructor/assignments" },
@@ -198,7 +201,7 @@ function ResultSummaries({ results = [] }) {
   );
 }
 
-function StudentDashboard({ dashboard, assessmentResults = [] }) {
+function StudentDashboard({ dashboard, assessmentResults = [], resources = [] }) {
   const courses = dashboard.courses || [];
   const notifications = dashboard.notifications || [];
   const attendanceSummary = dashboard.attendance_summary || {};
@@ -215,19 +218,6 @@ function StudentDashboard({ dashboard, assessmentResults = [] }) {
   const outstandingMonthlyPayment = Number(paymentSummary.outstanding_monthly_payment ?? paymentSummary.outstanding_amount ?? 0);
   const currentAmountPaid = Number(paymentSummary.current_amount_paid ?? paymentSummary.completed_amount ?? 0);
   const progressPercentage = Math.min(Number(progressTracker.progress_percentage || 0), 100);
-  const learningResources = [
-    {
-      title: "Student Learning Guide",
-      detail: "Orientation notes for Velttech Academy learners.",
-      href: "/resources/velttech-academy-student-guide.txt",
-    },
-    {
-      title: "Programme Progress Checklist",
-      detail: "A simple checklist for tracking modules and class preparation.",
-      href: "/resources/velttech-academy-progress-checklist.txt",
-    },
-  ];
-
   return (
     <>
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
@@ -423,22 +413,32 @@ function StudentDashboard({ dashboard, assessmentResults = [] }) {
         </section>
 
         <section>
-          <SectionHeading title="Resources" />
-          <div className="space-y-4">
-            {learningResources.map((resource) => (
-              <AcademyCard key={resource.title}>
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <h3 className="font-bold text-dark">{resource.title}</h3>
-                    <p className="mt-1 text-sm text-slate-600">{resource.detail}</p>
+          <SectionHeading title="Learning Resources" actionHref="/resources" actionLabel="View all ->" />
+          {resources.length === 0 ? (
+            <EmptyState>No resources published yet.</EmptyState>
+          ) : (
+            <div className="space-y-4">
+              {resources.slice(0, 3).map((resource) => (
+                <AcademyCard key={resource.id}>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <h3 className="font-bold text-dark">{resource.title}</h3>
+                      <p className="mt-1 text-sm text-slate-600">{resource.course_title}</p>
+                    </div>
+                    {resource.resource_type === "note" ? (
+                      <Link href="/resources" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
+                        Read Note
+                      </Link>
+                    ) : (
+                      <a href={resource.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
+                        Open Resource
+                      </a>
+                    )}
                   </div>
-                  <Link href={resource.href} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-dark">
-                    Download
-                  </Link>
-                </div>
-              </AcademyCard>
-            ))}
-          </div>
+                </AcademyCard>
+              ))}
+            </div>
+          )}
         </section>
       </div>
 
@@ -929,11 +929,15 @@ export default async function DashboardPage() {
   let user;
   let dashboard;
   let assessmentResults = [];
+  let resources = [];
 
   try {
     [user, dashboard] = await Promise.all([getCurrentUser(), djangoApiFetch("dashboard")]);
     if (user.role === "student" || user.role === "parent") {
-      assessmentResults = await djangoApiFetch("my-assessment-results");
+      [assessmentResults, resources] = await Promise.all([
+        djangoApiFetch("my-assessment-results"),
+        djangoApiFetch("my-resources"),
+      ]);
     }
   } catch (error) {
     if (error?.digest?.startsWith("NEXT_REDIRECT")) {
@@ -960,7 +964,7 @@ export default async function DashboardPage() {
       <h1 className="mt-4 text-3xl font-bold text-dark">Welcome, {user.first_name}</h1>
 
       <div className="mt-8">
-        {user.role === "student" ? <StudentDashboard dashboard={dashboard} assessmentResults={assessmentResults} /> : null}
+        {user.role === "student" ? <StudentDashboard dashboard={dashboard} assessmentResults={assessmentResults} resources={resources} /> : null}
         {user.role === "parent" ? <ParentDashboard dashboard={dashboard} assessmentResults={assessmentResults} /> : null}
         {user.role === "admin" ? <AdminDashboard dashboard={dashboard} /> : null}
         {user.role === "instructor" ? <InstructorDashboard dashboard={dashboard} /> : null}
